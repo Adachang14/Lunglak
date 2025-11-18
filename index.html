@@ -225,7 +225,7 @@ let mode = "2d";
 
 let isPaste = false;
 let buffer = "";
-let lastInputValue = ""; // ใช้จำค่าก่อนหน้าเพื่อรู้ว่ามีตัวใหม่เพิ่มอะไรเข้ามา
+let lastInputValue = "";
 
 const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
@@ -247,7 +247,6 @@ function switchMode(m){
 
     clearNumbers();
 
-    // เคลียร์ช่อง 1 แล้วโฟกัส + ไฮไลต์ พร้อมวาง / พิมเลขทันที
     inputNums.value = "";
     buffer = "";
     lastInputValue = "";
@@ -305,7 +304,6 @@ function handlePaste(text){
 }
 
 /* ----------------------- HANDLE TYPING ----------------------- */
-// ใช้เฉพาะ "ตัวเลขใหม่ที่เพิ่งเพิ่มเข้ามา" เท่านั้น
 function handleTyping(newDigits){
     let created = 0;
     buffer += newDigits;
@@ -339,7 +337,6 @@ inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
 
     if(isPaste){
-        // โหมดวางทีละยาว
         handlePaste(v);
         buffer = "";
         isPaste = false;
@@ -348,26 +345,21 @@ inputNums.addEventListener("input",(e)=>{
         return;
     }
 
-    // โหมดพิมทีละตัว: หา "ตัวเลขที่เพิ่งเพิ่มมา"
     let prev = lastInputValue;
     let prevDigits = prev.replace(/\D/g,"");
     let newDigitsAll = v.replace(/\D/g,"");
 
-    // อัปเดตค่าไว้ใช้รอบหน้า
     lastInputValue = v;
 
-    // ถ้าความยาวเลขใหม่ <= เดิม แปลว่าลบ/แก้ในช่อง → รีเซ็ต buffer ทิ้ง ป้องกันบั๊ก
     if(newDigitsAll.length <= prevDigits.length){
         buffer = "";
         return;
     }
 
-    // ส่วนที่เพิ่มเข้ามาเท่านั้น
     let addedDigits = newDigitsAll.slice(prevDigits.length);
 
     let created = handleTyping(addedDigits);
 
-    // ถ้ามีเลขครบชุดถูกดึงไปเป็น pill แล้ว ค่อยเคลียร์ช่อง 1
     if(created > 0){
         setTimeout(()=>{
             inputNums.value = "";
@@ -400,12 +392,10 @@ function reverseNumbers(){
             const a = obj.val[0];
             const b = obj.val[1];
 
-            // เลขเบิ้ล (11,22,...,99) ไม่กลับ
             if(a === b) return;
 
             const rev = pad2(b + a);
 
-            // กันเลขซ้ำ
             if(!currentNums.some(o => !o.error && o.val === rev)){
                 add.push({val:rev, error:false});
             }
@@ -435,7 +425,14 @@ function clearNumbers(){
 
 /* ----------------------- BILL SYSTEM ----------------------- */
 function addBill(){
-    let valid = currentNums.filter(x=>!x.error).map(x=>x.val);
+    // เอาเฉพาะเลขที่ถูกต้องตามโหมดเท่านั้น
+    let valid = currentNums.filter(x=>{
+        if(x.error) return false;
+        if(mode === "2d" && x.val.length !== 2) return false;
+        if(mode === "3d" && x.val.length !== 3) return false;
+        return true;
+    }).map(x=>x.val);
+
     if(valid.length===0) return false;
 
     let t = Number(topPrice.value||0);
@@ -498,25 +495,21 @@ document.addEventListener("keydown", function(e) {
     if (e.key !== "Tab") return;
     e.preventDefault();
 
-    // TAB 1 — ช่องเลข → ราคา บน
     if (document.activeElement === inputNums) {
         topPrice.focus(); topPrice.select();
         return;
     }
 
-    // TAB 2 — ราคา บน → ราคา ล่าง
     if (document.activeElement === topPrice) {
         bottomPrice.focus(); bottomPrice.select();
         return;
     }
 
-    // TAB 3 — ราคา ล่าง → เพิ่มบิล
     if (document.activeElement === bottomPrice) {
         addBillAndReset();
         return;
     }
 
-    // หากไม่ใช่ 3 จุดด้านบน → กลับไปช่องเลข
     inputNums.focus();
     inputNums.select();
 });
