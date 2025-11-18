@@ -48,7 +48,7 @@
         width:100%;
         padding:12px;
         border-radius:10px;
-        border:1px solid #aaa;
+        border:1px solid:#aaa;
         font-size:16px;
         transition:0.2s;
     }
@@ -61,7 +61,7 @@
         min-height:50px;
         padding:10px;
         border-radius:10px;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
         background:#fffafc;
         display:flex;
         flex-wrap:wrap;
@@ -119,7 +119,7 @@
         margin-bottom:15px;
         display:flex;
         justify-content:space-between;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
     }
 
     .bill-left {
@@ -211,7 +211,7 @@
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
-        <!-- ให้ล้างเลข + ล้างบิลทั้งหมด -->
+        <!-- ล้างเลข + ล้างบิลทั้งหมด -->
         <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
@@ -255,7 +255,7 @@ function groupByWidth(nums, maxWidth){
     let current = "";
     let currentWidth = 0;
 
-    nums.forEach((n, index) => {
+    nums.forEach((n) => {
         const token = (current ? " " : "") + n;
         const w = _measureCtx.measureText(token).width;
 
@@ -477,7 +477,10 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        const lineStrings = groupByWidth(b.nums, maxWidth);
+        /* ให้ 2 ตัวใช้ความกว้างแคบลงหน่อย จะได้ตัดบรรทัดถี่ขึ้นคล้าย 3 ตัว */
+        const widthForThisBill = b.mode === "3d" ? maxWidth : maxWidth * 0.7;
+
+        const lineStrings = groupByWidth(b.nums, widthForThisBill);
         const lines = lineStrings.map(l=>`<div class="bill-line">${l}</div>`).join("");
 
         html+=`
