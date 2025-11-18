@@ -51,7 +51,6 @@
         cursor:pointer;
         font-weight:bold;
     }
-
     button:focus { outline: none !important; }
 
     .btn-rev { background:#ffe06c; }
@@ -114,37 +113,44 @@
 
 let bills = [];
 
-/* =============== ฟังก์ชันดึงเลข 2 หลักเท่านั้น =============== */
+/* อ่านเฉพาะเลข 2 หลัก */
 function extractNumbers(text) {
     return text.match(/\b\d{2}\b/g) || [];
 }
 
-/* ===================== ปุ่มกลับเลข ===================== */
+/* ล้างข้อความขยะเฉพาะตอนวาง (paste) */
+document.getElementById("numbers").addEventListener("paste", function(e){
+    setTimeout(() => {
+        let raw = this.value;
+        let clean = extractNumbers(raw).join(" ");
+        this.value = clean;
+    }, 10);
+});
+
+/* กลับเลข */
 function reverseNumbers() {
     let raw = document.getElementById("numbers").value;
 
-    // ดึงเฉพาะเลข 2 ตัว (ตัดขยะทั้งหมด)
+    // เก็บเฉพาะเลข 2 หลักก่อน (ตัดขยะ)
     let arr = extractNumbers(raw);
 
-    if (arr.length === 0) {
+    if(arr.length === 0){
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    // กลับเลขทั้งหมดแบบเพิ่มซ้ำตามที่ต้องการ
-    let reversedList = [];
-    arr.forEach(num => reversedList.push(num[1] + num[0]));
+    // กลับเลขแบบเพิ่มซ้ำตามต้องการ
+    let reversed = [];
+    arr.forEach(num => reversed.push(num[1] + num[0]));
 
-    // ต่อท้ายเลขกลับทั้งหมด
-    document.getElementById("numbers").value = arr.join(" ") + " " + reversedList.join(" ");
+    // รวมกลับเข้าไป
+    document.getElementById("numbers").value = arr.join(" ") + " " + reversed.join(" ");
 }
 
-/* ===================== เพิ่มบิล ======================= */
+/* เพิ่มบิล */
 function addBill() {
 
     let raw = document.getElementById("numbers").value;
-
-    // ดึงเฉพาะเลข 2 หลักในช่อง
     let arr = extractNumbers(raw);
 
     if (arr.length === 0) return alert("ไม่พบเลข 2 หลัก");
@@ -168,20 +174,19 @@ function addBill() {
     renderBills();
 }
 
-/* ===================== ลบบิล ======================= */
+/* ลบ */
 function delBill(i) {
     bills.splice(i,1);
     renderBills();
 }
 
-/* ===================== แสดงบิล ======================= */
+/* แสดงบิล */
 function renderBills() {
 
     let html = "";
     let totalAll = 0;
 
     bills.forEach((b,i)=>{
-
         totalAll += b.total;
 
         html += `
@@ -198,7 +203,6 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-
     document.getElementById("totalAll").innerHTML =
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
@@ -207,4 +211,3 @@ function renderBills() {
 
 </body>
 </html>
-
