@@ -119,7 +119,7 @@
         margin-bottom:15px;
         display:flex;
         justify-content:space-between;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
     }
 
     .bill-left {
@@ -260,7 +260,7 @@ function switchMode(m){
 function renderNumbers(){
     numbersContainer.innerHTML = "";
     currentNums.forEach((obj, idx)=>{
-        let btn = document.createElement("button");
+        const btn = document.createElement("button");
         btn.className = obj.error ? "num-pill error" : "num-pill";
         btn.textContent = obj.val;
 
@@ -274,29 +274,28 @@ function renderNumbers(){
 }
 
 /* ----------------------- HANDLE PASTE ----------------------- */
+// ตรงนี้คือจุดที่แก้: แต่ละ token อ่านตามโหมดเท่านั้น
 function handlePaste(text){
-    let clean = text.replace(/[^0-9]/g," ");
+    let clean = text.replace(/[^0-9\s]/g," ");
     let blocks = clean.split(/\s+/).filter(x=>x.length>0);
 
-    blocks.forEach(block=>{
-        if(mode==="2d"){
-            while(block.length>=2){
-                currentNums.push({val:pad2(block.slice(0,2)), error:false});
-                block = block.slice(2);
+    blocks.forEach(token=>{
+        if(mode === "2d"){
+            if(token.length === 2){
+                currentNums.push({val: pad2(token), error:false});
+            }else if(token.length === 1){
+                currentNums.push({val: token, error:true});
             }
-            if(block.length===1){
-                currentNums.push({val:block, error:true});
-            }
+            // ความยาวอื่น (3 หลักขึ้นไป) ข้ามทิ้ง ไม่หั่น
         }
 
-        if(mode==="3d"){
-            while(block.length>=3){
-                currentNums.push({val:pad3(block.slice(0,3)), error:false});
-                block = block.slice(3);
+        if(mode === "3d"){
+            if(token.length === 3){
+                currentNums.push({val: pad3(token), error:false});
+            }else if(token.length === 1 || token.length === 2){
+                currentNums.push({val: token, error:true});
             }
-            if(block.length>0){
-                currentNums.push({val:block, error:true});
-            }
+            // >3 หลัก ข้ามทิ้งเหมือนกัน
         }
     });
 
@@ -392,7 +391,7 @@ function reverseNumbers(){
             const a = obj.val[0];
             const b = obj.val[1];
 
-            if(a === b) return;
+            if(a === b) return; // เลขเบิ้ลไม่กลับ
 
             const rev = pad2(b + a);
 
@@ -425,7 +424,6 @@ function clearNumbers(){
 
 /* ----------------------- BILL SYSTEM ----------------------- */
 function addBill(){
-    // เอาเฉพาะเลขที่ถูกต้องตามโหมดเท่านั้น
     let valid = currentNums.filter(x=>{
         if(x.error) return false;
         if(mode === "2d" && x.val.length !== 2) return false;
