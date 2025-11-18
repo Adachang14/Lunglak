@@ -1,3 +1,4 @@
+<!-- final stable version -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -25,6 +26,7 @@
         color:#c449d5;
         margin-bottom:20px;
     }
+
     .mode-row {
         display:flex;
         gap:10px;
@@ -42,6 +44,7 @@
         background:#ffb700;
         color:white;
     }
+
     input[type="text"] {
         width:100%;
         padding:12px;
@@ -50,10 +53,7 @@
         font-size:16px;
         transition:0.2s;
     }
-    .highlight {
-        box-shadow:0 0 10px #ff44c7;
-        border-color:#ff44c7 !important;
-    }
+
     .numbers-container {
         min-height:50px;
         padding:10px;
@@ -79,7 +79,9 @@
         background:#ff3b3b;
         color:white;
     }
+
     .row { display:flex; gap:10px; margin:10px 0; }
+
     input[type="number"] {
         width:100%;
         padding:12px;
@@ -87,23 +89,15 @@
         border:1px solid:#ccc;
         font-size:16px;
     }
-    button {
-        padding:12px 16px;
-        font-size:16px;
-        border-radius:10px;
-        border:none;
-        cursor:pointer;
-        font-weight:bold;
-    }
+
+    button { padding:12px 16px; font-size:16px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; }
+
     .btn-rev  { background:#ffe06c; }
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
-    .bill-box {
-        margin-top:20px;
-        background:#ffe7f8;
-        padding:15px;
-        border-radius:15px;
-    }
+
+    .bill-box { margin-top:20px; background:#ffe7f8; padding:15px; border-radius:15px; }
+
     .bill {
         background:white;
         padding:15px;
@@ -113,24 +107,11 @@
         justify-content:space-between;
         border:1px solid #ddd;
     }
-    .bill-left {
-        width:85%;
-        font-size:16px;
-    }
-    .bill-title {
-        font-weight:bold;
-        font-size:17px;
-        margin-bottom:5px;
-        color:#333;
-    }
-    .bill-price {
-        color:#777;
-        font-size:14px;
-    }
-    .bill-multiply {
-        font-weight:bold;
-        margin-bottom:8px;
-    }
+
+    .bill-left { width:85%; font-size:16px; }
+
+    .bill-title { font-weight:bold; font-size:17px; margin-bottom:5px; color:#333; }
+
     .bill-nums {
         background:#f8f8f8;
         padding:10px;
@@ -138,33 +119,17 @@
         border:1px solid #ddd;
         font-size:15px;
         margin-bottom:8px;
-        display:block;
+        word-break:keep-all;
+        white-space:normal;
     }
-    .bill-line {
-        white-space:nowrap;
-        margin-bottom:4px;
-    }
-    .bill-total {
-        font-weight:bold;
-        color:#d7006a;
-    }
-    .del-btn {
-        font-size:22px;
-        color:red;
-        cursor:pointer;
-        user-select:none;
-    }
-    .total-all {
-        text-align:center;
-        font-size:22px;
-        margin-top:20px;
-        font-weight:bold;
-    }
-    .label {
-        font-size:14px;
-        margin:5px 0 3px;
-        color:#555;
-    }
+
+    .bill-line { white-space:nowrap; margin-bottom:4px; }
+
+    .bill-total { font-weight:bold; color:#d7006a; }
+
+    .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; }
+
+    .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
 </style>
 </head>
 
@@ -181,10 +146,10 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
     </div>
 
-    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
+    <div>ช่อง 1: พิมพ์หรือกอปเลข</div>
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
 
-    <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
+    <div>ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
@@ -209,180 +174,188 @@ let bills = [];
 let currentNums = [];
 let mode = "2d";
 
-let inputNums = document.getElementById("inputNums");
-let numbersContainer = document.getElementById("numbersContainer");
+const inputNums = document.getElementById("inputNums");
+const numbersContainer = document.getElementById("numbersContainer");
+const topPrice = document.getElementById("top");
+const bottomPrice = document.getElementById("bottom");
 
-let buffer = "";
+const pad2 = n => n.toString().padStart(2,"0");
+const pad3 = n => n.toString().padStart(3,"0");
 
-const pad2 = x => x.toString().padStart(2,"0");
-const pad3 = x => x.toString().padStart(3,"0");
-
-/* ---------- SWITCH MODE ---------- */
+/* -------------------------------------------------- MODE -------------------------------------------------- */
 function switchMode(m){
     mode = m;
-    document.querySelectorAll(".mode-btn").forEach(b=>b.classList.remove("active"));
-    document.getElementById("btn"+(m==="2d"?"2d":m)).classList.add("active");
+
+    document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
+    document.getElementById("btn2d").classList.toggle("active", m==="2d");
+    document.getElementById("btn3d").classList.toggle("active", m==="3d");
+    document.getElementById("btn19").classList.toggle("active", m==="19");
+    document.getElementById("btnRun").classList.toggle("active", m==="run");
 
     clearNumbers();
+
     inputNums.value = "";
-    buffer = "";
+    inputNums.focus();
 }
 
-/* ---------- RENDER NUMBERS ---------- */
+/* -------------------------------------------------- RENDER PILLS -------------------------------------------------- */
 function renderNumbers(){
     numbersContainer.innerHTML = "";
     currentNums.forEach((obj,idx)=>{
-        let b = document.createElement("button");
-        b.className = obj.error ? "num-pill error" : "num-pill";
-        b.textContent = obj.val;
-        b.onclick = ()=>{
+        const btn = document.createElement("button");
+        btn.className = obj.error ? "num-pill error" : "num-pill";
+        btn.textContent = obj.val;
+        btn.onclick = ()=>{
             currentNums.splice(idx,1);
             renderNumbers();
         };
-        numbersContainer.appendChild(b);
+        numbersContainer.appendChild(btn);
     });
 }
 
-/* ---------- HANDLE INPUT (TYPE) ---------- */
-inputNums.addEventListener("input", e=>{
-    let raw = e.target.value.replace(/[^0-9]/g,"");
-
-    // แสดงเลขที่พิม "ขณะพิม" (ค้าง)
-    inputNums.value = raw;
-
-    if(mode==="2d" && raw.length === 2){
-        currentNums.push({val:pad2(raw), error:false});
-        renderNumbers();
-        inputNums.value = "";
-    }
-
-    if(mode==="3d" && raw.length === 3){
-        currentNums.push({val:pad3(raw), error:false});
-        renderNumbers();
-        inputNums.value = "";
-    }
-});
-
-/* ---------- HANDLE PASTE ---------- */
+/* -------------------------------------------------- PASTE -------------------------------------------------- */
 inputNums.addEventListener("paste", e=>{
-    e.preventDefault();
-    let text = (e.clipboardData || window.clipboardData).getData("text");
-    let clean = text.replace(/[^0-9\s]/g," ").trim();
-    let tokens = clean.split(/\s+/);
+    setTimeout(()=>{
+        let text = inputNums.value.replace(/[^0-9\s]/g," ");
+        let blocks = text.split(/\s+/).filter(x=>x.length>0);
 
-    tokens.forEach(t=>{
-        if(mode==="2d" && t.length===2){
-            currentNums.push({val:pad2(t), error:false});
-        } else if(mode==="3d" && t.length===3){
-            currentNums.push({val:pad3(t), error:false});
-        }
-    });
+        blocks.forEach(token=>{
+            if(mode==="2d"){
+                if(token.length===2) currentNums.push({val:pad2(token), error:false});
+                else currentNums.push({val:token,error:true});
+            }
+            if(mode==="3d"){
+                if(token.length===3) currentNums.push({val:pad3(token), error:false});
+                else currentNums.push({val:token,error:true});
+            }
+        });
 
-    renderNumbers();
-    inputNums.value = "";
+        renderNumbers();
+        inputNums.value = "";
+    },10);
 });
 
-/* ---------- REVERSE ---------- */
-function reverse3digit(n){
-    let s=n.split("");
-    if(s[0]===s[1] && s[1]===s[2]) return [n];
+/* -------------------------------------------------- TYPING -------------------------------------------------- */
+inputNums.addEventListener("input", e=>{
+    let v = e.target.value;
+    let digits = v.replace(/\D/g,"");
+
+    if(mode==="2d" && digits.length===2){
+        currentNums.push({val:pad2(digits), error:false});
+        renderNumbers();
+        setTimeout(()=>{ inputNums.value=""; },150);
+    }
+
+    if(mode==="3d" && digits.length===3){
+        currentNums.push({val:pad3(digits), error:false});
+        renderNumbers();
+        setTimeout(()=>{ inputNums.value=""; },150);
+    }
+});
+
+/* -------------------------------------------------- REVERSE -------------------------------------------------- */
+function reverse3digit(num){
+    const [a,b,c] = num.split("");
+    if(a===b && b===c) return [num];
     let arr = [
-        s[0]+s[1]+s[2], s[0]+s[2]+s[1],
-        s[1]+s[0]+s[2], s[1]+s[2]+s[0],
-        s[2]+s[0]+s[1], s[2]+s[1]+s[0]
+        a+b+c, a+c+b,
+        b+a+c, b+c+a,
+        c+a+b, c+b+a
     ];
     return [...new Set(arr)];
 }
 
 function reverseNumbers(){
-    let add=[];
+    let add = [];
+
     currentNums.forEach(obj=>{
         if(obj.error) return;
+
         if(mode==="2d"){
             let a=obj.val[0], b=obj.val[1];
             if(a===b) return;
-            let r = b+a;
-            if(!currentNums.some(x=>x.val===r)){
-                add.push({val:r,error:false});
-            }
+            let rev=pad2(b+a);
+            if(!currentNums.some(o=>o.val===rev)) add.push({val:rev,error:false});
         }
+
         if(mode==="3d"){
             reverse3digit(obj.val).forEach(x=>{
-                if(!currentNums.some(o=>o.val===x)){
-                    add.push({val:x,error:false});
-                }
+                if(!currentNums.some(o=>o.val===x)) add.push({val:x,error:false});
             });
         }
     });
-    currentNums = currentNums.concat(add);
+
+    currentNums=currentNums.concat(add);
     renderNumbers();
 }
 
-/* ---------- CLEAR ---------- */
+/* -------------------------------------------------- CLEAR -------------------------------------------------- */
 function clearNumbers(){
-    currentNums = [];
+    currentNums=[];
     renderNumbers();
+    topPrice.value="";
+    bottomPrice.value="";
 }
 
-/* ---------- ADD BILL ---------- */
+/* -------------------------------------------------- ADD BILL -------------------------------------------------- */
 function addBill(){
-    let nums = currentNums.filter(x=>!x.error).map(x=>x.val);
-    if(nums.length===0) return false;
+    let valid=currentNums.filter(x=>{
+        if(x.error) return false;
+        if(mode==="2d" && x.val.length!==2) return false;
+        if(mode==="3d" && x.val.length!==3) return false;
+        return true;
+    }).map(x=>x.val);
 
-    let t = Number(document.getElementById("top").value||0);
-    let b = Number(document.getElementById("bottom").value||0);
+    if(valid.length===0) return;
+
+    let t=Number(topPrice.value||0);
+    let b=Number(bottomPrice.value||0);
 
     bills.push({
-        nums:nums,
+        nums:valid,
         top:t,
         bottom:b,
-        total:nums.length*(t+b),
+        total:valid.length*(t+b),
         mode:mode
     });
 
     renderBills();
-    return true;
 }
 
 function addBillAndReset(){
-    if(!addBill()) return;
+    addBill();
     clearNumbers();
-    inputNums.value = "";
-    buffer = "";
-    document.getElementById("top").value = "";
-    document.getElementById("bottom").value = "";
+    inputNums.value="";
+    inputNums.focus();
 }
 
-/* ---------- RENDER BILL ---------- */
+/* -------------------------------------------------- RENDER BILLS -------------------------------------------------- */
 function renderBills(){
-    let html = "";
-    let total = 0;
+    let html="";
+    let total=0;
 
     bills.forEach((b,i)=>{
-        total += b.total;
+        total+=b.total;
 
         let grouped=[];
-        for(let x=0; x<b.nums.length; x+=17){
+        for(let x=0;x<b.nums.length;x+=17){
             grouped.push(b.nums.slice(x,x+17).join(" "));
         }
+        let linesHTML=grouped.map(line=>`<div class="bill-line">${line}</div>`).join("");
 
         html+=`
         <div class="bill">
             <div class="bill-left">
                 <div class="bill-title">${b.mode==="3d"?"3 ตัว":"2 ตัว"}</div>
-                <div class="bill-price">${b.mode==="3d"?"บน × ล่าง × โต๊ด":"บน × ล่าง"}</div>
-                <div class="bill-multiply">${b.top} × ${b.bottom}</div>
-                <div class="bill-nums">
-                    ${grouped.map(line=>`<div class="bill-line">${line}</div>`).join("")}
-                </div>
+                <div class="bill-nums">${linesHTML}</div>
                 <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
     });
 
-    document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${total} บาท`;
+    document.getElementById("billList").innerHTML=html;
+    document.getElementById("totalAll").innerText=`รวมทั้งหมด: ${total} บาท`;
 }
 
 function delBill(i){
@@ -390,34 +363,10 @@ function delBill(i){
     renderBills();
 }
 
-/* ---------- TAB CONTROL ---------- */
-document.addEventListener("keydown", function(e){
-    if(e.key!=="Tab") return;
-    e.preventDefault();
-
-    if(document.activeElement===inputNums){
-        document.getElementById("top").focus();
-        return;
-    }
-    if(document.activeElement===document.getElementById("top")){
-        document.getElementById("bottom").focus();
-        return;
-    }
-    if(document.activeElement===document.getElementById("bottom")){
-        addBillAndReset();
-        return;
-    }
-    inputNums.focus();
-});
-
-/* ---------- SPACE = REVERSE ---------- */
-document.addEventListener("keydown", e=>{
-    if(e.code==="Space"){
-        e.preventDefault();
-        reverseNumbers();
-    }
+/* -------------------------------------------------- TOP/BOTTOM AUTO SELECT -------------------------------------------------- */
+[topPrice,bottomPrice].forEach(inp=>{
+    inp.addEventListener("focus",()=>inp.select());
 });
 </script>
-
 </body>
 </html>
