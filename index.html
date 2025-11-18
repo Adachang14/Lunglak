@@ -149,10 +149,16 @@
         padding:10px;
         border-radius:10px;
         border:1px solid #ddd;
-        line-height:1.7;
-        word-break:break-all;
         font-size:15px;
         margin-bottom:8px;
+        display:block;
+        word-break:keep-all;
+        white-space:normal;
+    }
+
+    .bill-line {
+        white-space:nowrap;
+        margin-bottom:4px;
     }
 
     .bill-total {
@@ -256,7 +262,7 @@ function switchMode(m){
     setTimeout(()=> inputNums.classList.remove("highlight"), 200);
 }
 
-/* ----------------------- RENDER ----------------------- */
+/* ----------------------- RENDER PILL ----------------------- */
 function renderNumbers(){
     numbersContainer.innerHTML = "";
     currentNums.forEach((obj, idx)=>{
@@ -274,7 +280,7 @@ function renderNumbers(){
 }
 
 /* ----------------------- HANDLE PASTE ----------------------- */
-// ตรงนี้คือจุดที่แก้: แต่ละ token อ่านตามโหมดเท่านั้น
+// แต่ละ token อ่านตามโหมดเท่านั้น
 function handlePaste(text){
     let clean = text.replace(/[^0-9\s]/g," ");
     let blocks = clean.split(/\s+/).filter(x=>x.length>0);
@@ -286,7 +292,7 @@ function handlePaste(text){
             }else if(token.length === 1){
                 currentNums.push({val: token, error:true});
             }
-            // ความยาวอื่น (3 หลักขึ้นไป) ข้ามทิ้ง ไม่หั่น
+            // >2 หลัก ข้ามทิ้ง
         }
 
         if(mode === "3d"){
@@ -295,7 +301,7 @@ function handlePaste(text){
             }else if(token.length === 1 || token.length === 2){
                 currentNums.push({val: token, error:true});
             }
-            // >3 หลัก ข้ามทิ้งเหมือนกัน
+            // >3 หลัก ข้ามทิ้ง
         }
     });
 
@@ -391,7 +397,8 @@ function reverseNumbers(){
             const a = obj.val[0];
             const b = obj.val[1];
 
-            if(a === b) return; // เลขเบิ้ลไม่กลับ
+            // เลขเบิ้ลไม่กลับ
+            if(a === b) return;
 
             const rev = pad2(b + a);
 
@@ -463,6 +470,7 @@ function delBill(index){
     renderBills();
 }
 
+/* ----------------------- RENDER BILLS (ตัดบรรทัดละ 17 ตัว) ----------------------- */
 function renderBills(){
     let html = "";
     let total = 0;
@@ -470,13 +478,24 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total += b.total;
 
-        html+=`
+        // แบ่งเลขเป็นแถวละ 17 ตัว
+        let grouped = [];
+        for(let x = 0; x < b.nums.length; x += 17){
+            grouped.push(b.nums.slice(x, x+17).join(" "));
+        }
+        let linesHTML = grouped.map(line => `<div class="bill-line">${line}</div>`).join("");
+
+        html += `
         <div class="bill">
             <div class="bill-left">
-                <div class="bill-title">${b.mode==="3d"?"3 ตัว":"2 ตัว"}</div>
-                <div class="bill-price">${b.mode==="3d"?'บน × ล่าง × โต๊ด':'บน × ล่าง'}</div>
+                <div class="bill-title">${b.mode==="3d" ? "3 ตัว" : "2 ตัว"}</div>
+                <div class="bill-price">${b.mode==="3d" ? "บน × ล่าง × โต๊ด" : "บน × ล่าง"}</div>
                 <div class="bill-multiply">${b.top} × ${b.bottom}</div>
-                <div class="bill-nums">${b.nums.join(" ")}</div>
+
+                <div class="bill-nums">
+                    ${linesHTML}
+                </div>
+
                 <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
