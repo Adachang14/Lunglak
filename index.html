@@ -26,7 +26,6 @@
         margin-bottom:20px;
     }
 
-    /* ปุ่มโหมด */
     .mode-row {
         display:flex;
         gap:10px;
@@ -45,7 +44,6 @@
         color:white;
     }
 
-    /* ช่อง input */
     input[type="text"] {
         width:100%;
         padding:12px;
@@ -59,7 +57,6 @@
         border-color:#ff44c7 !important;
     }
 
-    /* Pill เลข */
     .numbers-container {
         min-height:50px;
         padding:10px;
@@ -82,7 +79,11 @@
         cursor:pointer;
     }
 
-    .row { display:flex; gap:10px; margin:10px 0; }
+    .row { 
+        display:flex; 
+        gap:10px; 
+        margin:10px 0; 
+    }
 
     input[type="number"] {
         width:100%;
@@ -92,7 +93,6 @@
         font-size:16px;
     }
 
-    /* ปุ่ม */
     button {
         padding:12px 16px;
         font-size:16px;
@@ -105,7 +105,6 @@
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
-    /* บิล */
     .bill-box {
         margin-top:20px;
         background:#ffe7f8;
@@ -181,7 +180,6 @@
 
     <h2>หวย Simulator Demo</h2>
 
-    <!-- ปุ่มโหมด -->
     <div class="mode-row">
         <button class="mode-btn active" id="btn2d" onclick="switchMode('2d')">2 ตัว</button>
         <button class="mode-btn" id="btn3d" onclick="switchMode('3d')">3 ตัว</button>
@@ -189,11 +187,9 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
     </div>
 
-    <!-- ช่อง 1 -->
     <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
 
-    <!-- ช่อง 2 -->
     <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
@@ -243,14 +239,14 @@ function switchMode(m) {
     bottomPrice.placeholder = (m === "3d") ? "ราคา โต๊ด" : "ราคา ล่าง";
 }
 
-/* ไฮไลต์ช่อง 1 */
+/* ไฮไลต์ */
 function highlightInput() {
     inputNums.classList.add("highlight");
     setTimeout(() => inputNums.classList.remove("highlight"), 200);
     inputNums.focus();
 }
 
-/* แสดง Pill */
+/* แสดง pill */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
@@ -265,11 +261,10 @@ function renderNumbers() {
     });
 }
 
-/* 🎯 ดึงเลขจากช่อง 1 (แก้กอปมาไม่มั่ว 100%) */
+/* input ช่อง 1 */
 inputNums.addEventListener("input", function () {
     let raw = this.value.trim();
 
-    // ถ้ามี space → แยกตรงๆ
     if (raw.includes(" ")) {
         let parts = raw.split(/\s+/);
         let valid = [];
@@ -288,7 +283,6 @@ inputNums.addEventListener("input", function () {
         return;
     }
 
-    // ถ้าพิมพ์เอง
     let digits = raw.replace(/\D/g, "");
     let chunk = (mode === "3d") ? 3 : 2;
 
@@ -306,52 +300,69 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* 🎯 กลับเลข 3 ตัวแบบไม่ซ้ำ + ไม่มั่ว + ถูกกติกา */
+/* ⭐ ฟังก์ชันใหม่ กลับเลข 3 ตัวถูกกติกา */
+function reverse3digit(num) {
+    const [a, b, c] = num.split("");
+
+    if (a === b && b === c) {
+        return [num];
+    }
+
+    if (a === b || a === c || b === c) {
+        let set = new Set([
+            a+b+c,
+            a+c+b,
+            b+a+c,
+            b+c+a,
+            c+a+b,
+            c+b+a
+        ]);
+
+        return Array.from(set).filter(x => {
+            let s = new Set(x.split(""));
+            return s.size === 2;
+        });
+    }
+
+    return [
+        a+b+c,
+        a+c+b,
+        b+a+c,
+        b+c+a,
+        c+a+b,
+        c+b+a
+    ];
+}
+
+/* ⭐ ฟังก์ชันกลับเลข ถูกต้อง */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    let reversed = [];
+    let result = [];
 
     currentNums.forEach(num => {
-
-        // 2 ตัว
         if (mode === "2d") {
-            reversed.push(num[1] + num[0]);
+            result.push(num[1] + num[0]);
         }
 
-        // 3 ตัว
         if (mode === "3d") {
-            let [a,b,c] = num.split("");
-
-            let set = new Set();
-
-            set.add(a+b+c);
-            set.add(a+c+b);
-            set.add(b+a+c);
-            set.add(b+c+a);
-            set.add(c+a+b);
-            set.add(c+b+a);
-
-            reversed.push(...Array.from(set));
+            result.push(...reverse3digit(num));
         }
     });
 
-    // ลบเลขซ้ำออกทั้งหมด (ตัวสำคัญที่สุดของแก)
-    let unified = new Set([...currentNums, ...reversed]);
+    let all = [...currentNums, ...result];
 
-    // แปลงกลับเป็น array
-    currentNums = Array.from(unified);
+    currentNums = Array.from(new Set(all));
 
-    // เรียงจากน้อยไปมาก (เพื่อความสวยงาม)
     currentNums.sort();
 
     renderNumbers();
 }
 
-/* ล้างเลข */
+/* ล้าง */
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
@@ -395,7 +406,7 @@ function delBill(i){
     renderBills();
 }
 
-/* UI บิล */
+/* แสดงบิล */
 function renderBills() {
     let html = "";
     let totalAll = 0;
@@ -441,7 +452,7 @@ function renderBills() {
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* TAB = บน → ล่าง → เพิ่มบิล */
+/* TAB control */
 document.addEventListener("keydown", function(e){
     if (e.key !== "Tab") return;
     e.preventDefault();
