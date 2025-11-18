@@ -214,8 +214,8 @@
 let bills = [];
 let currentNums = [];
 let mode = "2d";
-
 let isPaste = false;
+let buffer = "";
 
 const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
@@ -225,12 +225,10 @@ const bottomPrice = document.getElementById("bottom");
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-function switchMode(m) {
+/* ----------------------- MODE SWITCH ----------------------- */
+function switchMode(m){
     mode = m;
-
-    document.querySelectorAll(".mode-btn")
-        .forEach(btn => btn.classList.remove("active"));
-
+    document.querySelectorAll(".mode-btn").forEach(btn=>btn.classList.remove("active"));
     document.getElementById("btn2d").classList.toggle("active", m==="2d");
     document.getElementById("btn3d").classList.toggle("active", m==="3d");
     document.getElementById("btn19").classList.toggle("active", m==="19");
@@ -239,132 +237,125 @@ function switchMode(m) {
     clearNumbers();
 }
 
-function renderNumbers() {
+/* ----------------------- RENDER PILL ----------------------- */
+function renderNumbers(){
     numbersContainer.innerHTML = "";
-    currentNums.forEach((obj, index) => {
-        let pill = document.createElement("button");
-        pill.className = obj.error ? "num-pill error" : "num-pill";
-        pill.textContent = obj.val;
+    currentNums.forEach((obj, idx)=>{
+        const btn = document.createElement("button");
+        btn.className = obj.error ? "num-pill error" : "num-pill";
+        btn.textContent = obj.val;
 
-        pill.onclick = () => {
-            currentNums.splice(index, 1);
+        btn.onclick = ()=>{
+            currentNums.splice(idx,1);
             renderNumbers();
         };
 
-        numbersContainer.appendChild(pill);
+        numbersContainer.appendChild(btn);
     });
 }
 
-/* ----------------------- PASTE MODE ----------------------- */
-function handlePasteInput(raw){
-    let text = raw.replace(/[^0-9]/g," ");  // convert all non-digit to space
-    let blocks = text.split(/\s+/).filter(x => x.length > 0);
+/* ----------------------- PASTE INPUT ----------------------- */
+function handlePaste(text){
+    let clean = text.replace(/[^0-9]/g," ");
+    let blocks = clean.split(/\s+/).filter(x=>x.length>0);
 
-    blocks.forEach(block => {
-
-        if(mode === "2d"){
-            while(block.length >= 2){
-                let n = block.slice(0,2);
-                currentNums.push({val: pad2(n), error:false});
+    blocks.forEach(block=>{
+        if(mode==="2d"){
+            while(block.length>=2){
+                currentNums.push({val:pad2(block.slice(0,2)), error:false});
                 block = block.slice(2);
             }
-            if(block.length === 1){
+            if(block.length===1){
                 currentNums.push({val:block, error:true});
             }
         }
 
-        if(mode === "3d"){
-            while(block.length >= 3){
-                let n = block.slice(0,3);
-                currentNums.push({val: pad3(n), error:false});
+        if(mode==="3d"){
+            while(block.length>=3){
+                currentNums.push({val:pad3(block.slice(0,3)), error:false});
                 block = block.slice(3);
             }
-            if(block.length > 0){
+            if(block.length>0){
                 currentNums.push({val:block, error:true});
             }
         }
-
     });
 
     renderNumbers();
 }
 
-/* ----------------------- TYPING MODE ----------------------- */
-let buffer = "";
+/* ----------------------- TYPING INPUT ----------------------- */
+function handleTyping(txt){
+    buffer += txt.replace(/\D/g,"");
 
-function handleTyping(ch){
-    buffer += ch.replace(/\D/g,""); // only digits
-
-    if(mode==="2d" && buffer.length >= 2){
-        currentNums.push({val:pad2(buffer.slice(0,2)), error:false});
-        buffer = buffer.slice(2);
+    if(mode==="2d"){
+        while(buffer.length>=2){
+            currentNums.push({val:pad2(buffer.slice(0,2)), error:false});
+            buffer = buffer.slice(2);
+        }
     }
 
-    if(mode==="3d" && buffer.length >= 3){
-        currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
-        buffer = buffer.slice(3);
+    if(mode==="3d"){
+        while(buffer.length>=3){
+            currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
+            buffer = buffer.slice(3);
+        }
     }
 
     renderNumbers();
 }
 
-inputNums.addEventListener("paste", (e)=>{
-    isPaste = true;
-});
+/* ----------------------- INPUT LISTENER (DELAY 350ms) ----------------------- */
+inputNums.addEventListener("paste", ()=>{ isPaste = true; });
 
-inputNums.addEventListener("input", (e)=>{
-    let v = e.target.value;
-    e.target.value = "";
+inputNums.addEventListener("input",(e)=>{
+    const val = e.target.value;
+
+    setTimeout(()=>{ inputNums.value = ""; }, 350);
 
     if(isPaste){
-        handlePasteInput(v);
+        handlePaste(val);
         isPaste = false;
         buffer = "";
     } else {
-        handleTyping(v);
+        handleTyping(val);
     }
 });
 
-/* ----------------------- Reverse ----------------------- */
+/* ----------------------- REVERSE ----------------------- */
 function reverse3digit(num){
     const [a,b,c] = num.split("");
-
     if(a===b && b===c) return [num];
 
-    let arr = [
-        a+b+c, a+c+b,
-        b+a+c, b+c+a,
-        c+a+b, c+b+a
-    ];
-
-    return [...new Set(arr)];
+    let out = [a+b+c, a+c+b, b+a+c, b+c+a, c+a+b, c+b+a];
+    return [...new Set(out)];
 }
 
 function reverseNumbers(){
-    let newArr = [];
+    let added = [];
 
     currentNums.forEach(obj=>{
         if(obj.error) return;
 
         if(mode==="2d"){
-            let rev = obj.val[1] + obj.val[0];
-            newArr.push({val:pad2(rev), error:false});
+            let r = obj.val[1] + obj.val[0];
+            added.push({val:pad2(r), error:false});
         }
 
         if(mode==="3d"){
-            reverse3digit(obj.val)
-                .forEach(x=>{
-                    if(!currentNums.some(o=>o.val===x))
-                        newArr.push({val:x, error:false});
-                });
+            reverse3digit(obj.val).forEach(x=>{
+                if(!currentNums.some(o=>o.val===x)){
+                    added.push({val:x, error:false});
+                }
+            });
         }
     });
 
-    currentNums = currentNums.concat(newArr);
+    currentNums = currentNums.concat(added);
     renderNumbers();
 }
 
-/* ----------------------- Clear ----------------------- */
+/* ----------------------- CLEAR ----------------------- */
 function clearNumbers(){
     currentNums = [];
     buffer = "";
@@ -373,7 +364,7 @@ function clearNumbers(){
     bottomPrice.value = "";
 }
 
-/* ----------------------- Add Bill ----------------------- */
+/* ----------------------- BILL ----------------------- */
 function addBill(){
     let valid = currentNums.filter(x=>!x.error).map(x=>x.val);
     if(valid.length===0) return false;
@@ -382,10 +373,10 @@ function addBill(){
     let b = Number(bottomPrice.value||0);
 
     bills.push({
-        nums: valid,
-        top: t,
-        bottom: b,
-        total: valid.length*(t+b),
+        nums:valid,
+        top:t,
+        bottom:b,
+        total:valid.length*(t+b),
         mode:mode
     });
 
@@ -398,19 +389,14 @@ function addBillAndReset(){
     clearNumbers();
 }
 
-function delBill(i){
-    bills.splice(i,1);
-    renderBills();
-}
-
 function renderBills(){
     let html = "";
-    let totalAll = 0;
+    let total=0;
 
     bills.forEach((b,i)=>{
-        totalAll += b.total;
+        total+=b.total;
 
-        html += `
+        html+=`
         <div class="bill">
             <div class="bill-left">
                 <div class="bill-title">${b.mode==="3d"?"3 ตัว":"2 ตัว"}</div>
@@ -420,16 +406,19 @@ function renderBills(){
                 <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
-        </div>
-        `;
+        </div>`;
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText =
-        `รวมทั้งหมด: ${totalAll} บาท`;
+    document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${total} บาท`;
 }
 
-/* ----------------------- Space = Reverse ----------------------- */
+function delBill(i){
+    bills.splice(i,1);
+    renderBills();
+}
+
+/* ----------------------- SPACE REVERSE ----------------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.code==="Space"){
         e.preventDefault();
@@ -437,5 +426,6 @@ document.addEventListener("keydown",(e)=>{
     }
 });
 </script>
+
 </body>
 </html>
