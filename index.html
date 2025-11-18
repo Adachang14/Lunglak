@@ -211,7 +211,8 @@
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
-        <button class="btn-clear" onclick="clearNumbers()">ล้างเลข</button>
+        <!-- ให้ล้างเลข + ล้างบิลทั้งหมด -->
+        <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
     <div class="row">
@@ -255,12 +256,10 @@ function groupByWidth(nums, maxWidth){
     let currentWidth = 0;
 
     nums.forEach((n, index) => {
-        // ถ้ามีตัวก่อนหน้าแล้ว ให้เผื่อ space ข้างหน้า
         const token = (current ? " " : "") + n;
         const w = _measureCtx.measureText(token).width;
 
         if (current && currentWidth + w > maxWidth){
-            // ถ้าเกินความกว้างให้ดันขึ้นบรรทัดใหม่
             lines.push(current);
             current = n;
             currentWidth = _measureCtx.measureText(n).width;
@@ -410,12 +409,19 @@ function reverseNumbers(){
     renderNumbers();
 }
 
-/* ------------- CLEAR ------------- */
+/* ------------- CLEAR (เฉพาะเลข) ------------- */
 function clearNumbers(){
     currentNums=[];
     buffer="";
     lastDigits="";
     renderNumbers();
+}
+
+/* ------------- CLEAR + ล้างบิลทั้งหมด ------------- */
+function clearNumbersAndBills(){
+    clearNumbers();
+    bills = [];
+    renderBills();
 }
 
 /* ------------- ADD BILL ------------- */
@@ -444,10 +450,13 @@ function addBill(){
     return true;
 }
 
+/* หลังเพิ่มบิล: ล้างเลข + ล้างราคา + โฟกัสกลับช่อง 1 */
 function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
     inputNums.value="";
+    topPrice.value="";
+    bottomPrice.value="";
     inputNums.focus();
 }
 
@@ -462,15 +471,12 @@ function renderBills(){
     let html="";
     let total=0;
 
-    // ใช้ความกว้างของ .bill-box เป็นฐานคำนวณ
     const billBox = document.getElementById("billList");
-    // กันขอบซ้ายขวา, padding ฯลฯ ออกไปหน่อย
     const maxWidth = Math.max((billBox.clientWidth || 0) - 40, 100);
 
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        // ใช้ groupByWidth แทนการตัดทีละ 17 ตัว
         const lineStrings = groupByWidth(b.nums, maxWidth);
         const lines = lineStrings.map(l=>`<div class="bill-line">${l}</div>`).join("");
 
