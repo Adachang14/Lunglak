@@ -490,7 +490,7 @@ function renderBills(){
                 <div class="bill-price">${b.mode==="3d"?"บน × ล่าง × โต๊ด":"บน × ล่าง"}</div>
                 <div class="bill-multiply">${b.top} × ${b.bottom}</div>
                 <div class="bill-nums">${lines}</div>
-                <div class="bill-total">ราคาเเค่ส่วนนี้: ${b.total} บาท</div>
+            
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>
@@ -498,7 +498,7 @@ function renderBills(){
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText = `ราคารวมทั้งหมด: ${total} บาท`;
+    document.getElementById("totalAll").innerText = `ยอดรวมทั้งหมด: ${total} บาท`;
 }
 
 /* ------------- TAB SYSTEM (ราคา บน → ล่าง → เพิ่มบิล) ------------- */
