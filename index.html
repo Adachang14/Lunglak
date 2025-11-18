@@ -32,7 +32,15 @@
         border:1px solid #aaa;
         font-size:16px;
         box-sizing:border-box;
+        transition:0.2s;
     }
+
+    /* ไฮไลต์แบบเด้งตอน focus อัตโนมัติ */
+    .highlight {
+        box-shadow:0 0 10px #ff44c7;
+        border-color:#ff44c7 !important;
+    }
+
     .numbers-container {
         min-height:50px;
         padding:10px;
@@ -73,8 +81,6 @@
         cursor:pointer;
         font-weight:bold;
     }
-    button:focus { outline: none !important; }
-
     .btn-rev  { background:#ffe06c; }
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
@@ -120,12 +126,10 @@
 
     <h2>หวย Simulator Demo</h2>
 
-    <!-- ช่อง 1 -->
-    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข (ครบ 2 หลักจะเด้งไปช่อง 2 อัตโนมัติ)</div>
-    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710141713=20*20กลับบนลาว">
+    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
+    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710=20*20กลับบนลาว">
 
-    <!-- ช่อง 2 -->
-    <div class="label">ช่อง 2: ผลลัพธ์เลขล้วน (แตะที่กล่องเลขเพื่อลบทีละตัว)</div>
+    <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัวได้)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
@@ -149,13 +153,12 @@
 
 <script>
 let bills = [];
-let tabCount = 0;
-let currentNums = []; // เก็บเลขทั้งหมดในช่อง 2 เป็น array
+let currentNums = [];
 
-const inputNums       = document.getElementById("inputNums");
-const numbersContainer= document.getElementById("numbersContainer");
-const topPrice        = document.getElementById("top");
-const bottomPrice     = document.getElementById("bottom");
+const inputNums        = document.getElementById("inputNums");
+const numbersContainer = document.getElementById("numbersContainer");
+const topPrice         = document.getElementById("top");
+const bottomPrice      = document.getElementById("bottom");
 
 /* ===== Auto-select ช่องราคาเมื่อโฟกัส ===== */
 [topPrice, bottomPrice].forEach(el => {
@@ -164,14 +167,20 @@ const bottomPrice     = document.getElementById("bottom");
     });
 });
 
-/* ===== แสดงเลขเป็นกล่องกดลบได้ ===== */
+/* ===== ไฮไลต์ช่อง 1 เมื่อ ready ===== */
+function highlightInput() {
+    inputNums.classList.add("highlight");
+    setTimeout(() => inputNums.classList.remove("highlight"), 200);
+    inputNums.focus();
+}
+
+/* ===== แสดงเลขแบบ pill ===== */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
         const btn = document.createElement("button");
         btn.className = "num-pill";
         btn.textContent = num;
-        btn.title = "คลิกเพื่อลบเลขนี้";
         btn.onclick = () => {
             currentNums.splice(index, 1);
             renderNumbers();
@@ -180,13 +189,12 @@ function renderNumbers() {
     });
 }
 
-/* ===== ช่อง 1 ดักเลขทีละ 2 หลัก ===== */
+/* ===== จับเลขทีละ 2 หลัก ===== */
 inputNums.addEventListener("input", function () {
     let raw = this.value;
-    let mainPart = raw.split("=")[0];
-    let digits = mainPart.replace(/\D/g, "");
-
+    let digits = raw.split("=")[0].replace(/\D/g, "");
     let newNums = [];
+
     while (digits.length >= 2) {
         newNums.push(digits.slice(0, 2));
         digits = digits.slice(2);
@@ -202,16 +210,13 @@ inputNums.addEventListener("input", function () {
 
 /* ===== กลับเลข ===== */
 function reverseNumbers() {
-    if (currentNums.length === 0) {
-        alert("ไม่มีเลขให้กลับ");
-        return;
-    }
-    const reversed = currentNums.map(num => num[1] + num[0]);
+    if (currentNums.length === 0) return alert("ไม่มีเลขให้กลับ");
+    const reversed = currentNums.map(n => n[1] + n[0]);
     currentNums = currentNums.concat(reversed);
     renderNumbers();
 }
 
-/* ===== ล้างเลข + ล้างราคา ===== */
+/* ===== ล้างเลข + ล้างราคา + focus ช่อง 1 ===== */
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
@@ -219,22 +224,19 @@ function clearNumbers() {
     topPrice.value = "";
     bottomPrice.value = "";
     inputNums.value = "";
+
+    highlightInput();
 }
 
 /* ===== เพิ่มบิล ===== */
 function addBill() {
-    if (currentNums.length === 0) {
-        alert("ยังไม่มีเลขในช่อง 2");
-        return false;
-    }
+    if (currentNums.length === 0) return false;
 
     const t = Number(topPrice.value || 0);
     const b = Number(bottomPrice.value || 0);
 
-    const count      = currentNums.length;
-    const sumTop     = count * t;
-    const sumBottom  = count * b;
-    const sumBill    = sumTop + sumBottom;
+    const count = currentNums.length;
+    const sumBill = (count * t) + (count * b);
 
     bills.push({
         nums: [...currentNums],
@@ -247,13 +249,11 @@ function addBill() {
     return true;
 }
 
-/* ===== เพิ่มบิล + ล้างทั้งหมด ===== */
+/* ===== เพิ่มบิล + ล้างทั้งหมด + focus ช่อง 1 ===== */
 function addBillAndReset() {
     if (!addBill()) return;
-
     clearNumbers();
-    tabCount = 0;
-    inputNums.focus();
+    highlightInput();
 }
 
 /* ===== ลบบิล ===== */
@@ -262,9 +262,9 @@ function delBill(i) {
     renderBills();
 }
 
-/* ===== แสดงบิลทั้งหมด ===== */
+/* ===== แสดงบิล ===== */
 function renderBills() {
-    let html     = "";
+    let html = "";
     let totalAll = 0;
 
     bills.forEach((b, i) => {
@@ -288,28 +288,9 @@ function renderBills() {
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* ===== Tab เด้ง บน → ล่าง → เพิ่มบิล ===== */
+/* ===== Space = กลับเลข ===== */
 document.addEventListener("keydown", function(e){
-    if (e.key !== "Tab") return;
-    e.preventDefault();
-
-    const active = document.activeElement;
-
-    if (active === topPrice) {
-        bottomPrice.focus();
-        tabCount = 2;
-    } else if (active === bottomPrice) {
-        tabCount = 3;
-        addBillAndReset();
-    } else {
-        topPrice.focus();
-        tabCount = 1;
-    }
-});
-
-/* ===== สเปซ = กลับเลข ===== */
-document.addEventListener("keydown", function(e){
-    if (e.code === "Space" || e.key === " ") {
+    if (e.code === "Space") {
         e.preventDefault();
         reverseNumbers();
     }
