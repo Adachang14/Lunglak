@@ -280,25 +280,20 @@ document.addEventListener("keydown", function(e){
         bottomPrice.focus();
         tabCount = 2;
     } else if (active === bottomPrice) {
-        // รอบที่ 3 = เพิ่มบิล + ล้าง
         tabCount = 3;
         addBillAndReset();
     } else {
-        // รอบแรก หรือโฟกัสที่อื่น → ส่งไปที่ช่องราคา บน
         topPrice.focus();
         tabCount = 1;
     }
 });
 
-/* ==== สเปซบาร์ = กลับเลข (ถ้าไม่ได้โฟกัสช่อง 1/ราคา) ==== */
+/* ==== สเปซบาร์ = กลับเลข "ทุกที่บนหน้านี้" ==== */
 document.addEventListener("keydown", function(e){
-    if (e.code !== "Space" && e.key !== " ") return;
-
-    const id = document.activeElement.id;
-    if (id === "inputNums" || id === "top" || id === "bottom") return;
-
-    e.preventDefault();
-    reverseNumbers();
+    if (e.code === "Space" || e.key === " ") {
+        e.preventDefault();   // กันไม่ให้พิมพ์ช่องว่างทุกที่
+        reverseNumbers();     // กลับเลขทันที
+    }
 });
 </script>
 
