@@ -74,9 +74,9 @@
     .num-pill {
         background:#1e6bff;
         color:#fff;
-        padding:6px 10px;
+        padding:4px 8px;
         border-radius:8px;
-        font-size:15px;
+        font-size:13px;
         font-weight:bold;
         border:none;
         cursor:pointer;
@@ -105,7 +105,7 @@
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
-    /* บิล */
+    /* ====== บิล (ผลลัพธ์) ====== */
     .bill-box {
         margin-top:20px;
         background:#ffe7f8;
@@ -121,10 +121,14 @@
         justify-content:space-between;
         border:1px solid #ddd;
     }
+
+    /* ปรับให้แคบ เหมือนเว็บฝั่งสีเขียว */
     .bill-left {
-        width:85%;
-        font-size:16px;
+        max-width:260px;
+        width:260px;
+        font-size:14px;
     }
+
     .bill-title {
         font-weight:bold;
         font-size:17px;
@@ -133,28 +137,37 @@
     }
     .bill-price {
         color:#777;
-        font-size:14px;
+        font-size:13px;
     }
+
     .bill-multiply {
         font-weight:bold;
         margin-bottom:8px;
+        font-size:13px;
     }
+
+    /* กล่องแสดงชุดเลข (ผลลัพธ์เล็กลงตามต้องการ) */
     .bill-nums {
         background:#f8f8f8;
-        padding:10px;
+        padding:8px;
         border-radius:10px;
         border:1px solid #ddd;
-        line-height:1.7;
-        word-break:break-all;
-        font-size:15px;
-        margin-bottom:8px;
+        line-height:1.4;
+        word-break:break-word;
+        font-size:12px;            /* ตัวเล็กลง */
+        max-width:250px;           /* <<< ขนาดเท่าสีเขียว */
+        white-space:normal;
     }
+
     .bill-total {
         font-weight:bold;
         color:#d7006a;
+        margin-top:5px;
+        font-size:14px;
     }
+
     .del-btn {
-        font-size:22px;
+        font-size:20px;
         color:red;
         cursor:pointer;
         user-select:none;
@@ -250,7 +263,7 @@ function highlightInput() {
     inputNums.focus();
 }
 
-/* แสดง Pill */
+/* แสดง pill */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
@@ -265,11 +278,10 @@ function renderNumbers() {
     });
 }
 
-/* 🎯 ดึงเลขจากช่อง 1 (แก้กอปมาไม่มั่ว 100%) */
+/* 🎯 ดึงเลขจากช่อง 1 (คัดลอกชุดใหญ่ไม่มั่ว) */
 inputNums.addEventListener("input", function () {
     let raw = this.value.trim();
 
-    // ถ้ามี space → แยกตรงๆ
     if (raw.includes(" ")) {
         let parts = raw.split(/\s+/);
         let valid = [];
@@ -288,7 +300,6 @@ inputNums.addEventListener("input", function () {
         return;
     }
 
-    // ถ้าพิมพ์เอง
     let digits = raw.replace(/\D/g, "");
     let chunk = (mode === "3d") ? 3 : 2;
 
@@ -306,7 +317,7 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* 🎯 กลับเลข 3 ตัวแบบไม่ซ้ำ + ไม่มั่ว + ถูกกติกา */
+/* 🎯 กลับเลข 3 ตัวแบบไม่ซ้ำ + ไม่บวม + ถูกกติกา */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
@@ -316,38 +327,26 @@ function reverseNumbers() {
     let reversed = [];
 
     currentNums.forEach(num => {
-
-        // 2 ตัว
         if (mode === "2d") {
             reversed.push(num[1] + num[0]);
         }
 
-        // 3 ตัว
         if (mode === "3d") {
             let [a,b,c] = num.split("");
 
-            let set = new Set();
-
-            set.add(a+b+c);
-            set.add(a+c+b);
-            set.add(b+a+c);
-            set.add(b+c+a);
-            set.add(c+a+b);
-            set.add(c+b+a);
+            let set = new Set([
+                a+b+c, a+c+b,
+                b+a+c, b+c+a,
+                c+a+b, c+b+a
+            ]);
 
             reversed.push(...Array.from(set));
         }
     });
 
-    // ลบเลขซ้ำออกทั้งหมด (ตัวสำคัญที่สุดของแก)
     let unified = new Set([...currentNums, ...reversed]);
 
-    // แปลงกลับเป็น array
-    currentNums = Array.from(unified);
-
-    // เรียงจากน้อยไปมาก (เพื่อความสวยงาม)
-    currentNums.sort();
-
+    currentNums = Array.from(unified).sort();
     renderNumbers();
 }
 
@@ -410,10 +409,7 @@ function renderBills() {
                 <div class="bill-title">${b.mode === "3d" ? "3 ตัว" : "2 ตัว"}</div>
 
                 <div class="bill-price">
-                    ${b.mode === "3d"
-                        ? `บน × ล่าง × โต๊ด`
-                        : `บน × ล่าง`
-                    }
+                    ${b.mode === "3d" ? "บน × ล่าง × โต๊ด" : "บน × ล่าง"}
                 </div>
 
                 <div class="bill-multiply">
@@ -425,10 +421,7 @@ function renderBills() {
 
                 <div class="bill-nums">${b.nums.join(" ")}</div>
 
-                <div class="bill-total">
-                    รวมบิล: ${b.total} บาท
-                </div>
-
+                <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
 
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
@@ -469,6 +462,5 @@ document.addEventListener("keydown", function(e){
     }
 });
 </script>
-
 </body>
 </html>
