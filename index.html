@@ -122,7 +122,7 @@
         border:1px solid #ddd;
     }
 
-    /* ปรับให้แคบ เหมือนเว็บฝั่งสีเขียว */
+    /* ปรับให้แคบ เหมือนฝั่งสีเขียว */
     .bill-left {
         max-width:260px;
         width:260px;
@@ -146,7 +146,7 @@
         font-size:13px;
     }
 
-    /* กล่องแสดงชุดเลข (ผลลัพธ์เล็กลงตามต้องการ) */
+    /* กล่องแสดงเลขในบิล */
     .bill-nums {
         background:#f8f8f8;
         padding:8px;
@@ -154,8 +154,8 @@
         border:1px solid #ddd;
         line-height:1.4;
         word-break:break-word;
-        font-size:12px;            /* ตัวเล็กลง */
-        max-width:250px;           /* <<< ขนาดเท่าสีเขียว */
+        font-size:12px;            
+        max-width:250px;           
         white-space:normal;
     }
 
@@ -278,7 +278,7 @@ function renderNumbers() {
     });
 }
 
-/* 🎯 ดึงเลขจากช่อง 1 (คัดลอกชุดใหญ่ไม่มั่ว) */
+/* ดึงเลข (คัดลอกชุดใหญ่ไม่ผิดชุด) */
 inputNums.addEventListener("input", function () {
     let raw = this.value.trim();
 
@@ -317,36 +317,42 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* 🎯 กลับเลข 3 ตัวแบบไม่ซ้ำ + ไม่บวม + ถูกกติกา */
+/* 🎯 กลับเลข ไม่ทำชุดเพี้ยน ไม่ sort ไม่ลบชุดผิด */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    let reversed = [];
+    let newList = [...currentNums]; // สำเนาเลขเดิม
 
     currentNums.forEach(num => {
+
+        // ========== 2 ตัว ==========
         if (mode === "2d") {
-            reversed.push(num[1] + num[0]);
+            let rev = num[1] + num[0];
+            if (!newList.includes(rev)) newList.push(rev);
         }
 
+        // ========== 3 ตัว ==========
         if (mode === "3d") {
-            let [a,b,c] = num.split("");
+            let a = num[0], b = num[1], c = num[2];
 
-            let set = new Set([
+            let perms = [
                 a+b+c, a+c+b,
                 b+a+c, b+c+a,
                 c+a+b, c+b+a
-            ]);
+            ];
 
-            reversed.push(...Array.from(set));
+            let unique = [...new Set(perms)];
+
+            unique.forEach(p => {
+                if (!newList.includes(p)) newList.push(p);
+            });
         }
     });
 
-    let unified = new Set([...currentNums, ...reversed]);
-
-    currentNums = Array.from(unified).sort();
+    currentNums = newList;
     renderNumbers();
 }
 
@@ -462,5 +468,6 @@ document.addEventListener("keydown", function(e){
     }
 });
 </script>
+
 </body>
 </html>
