@@ -79,11 +79,7 @@
         cursor:pointer;
     }
 
-    .row { 
-        display:flex; 
-        gap:10px; 
-        margin:10px 0; 
-    }
+    .row { display:flex; gap:10px; margin:10px 0; }
 
     input[type="number"] {
         width:100%;
@@ -212,6 +208,7 @@
 
 
 <script>
+/* ----------------------- ตัวแปรหลัก ----------------------- */
 let bills = [];
 let currentNums = [];
 let mode = "2d";
@@ -221,10 +218,13 @@ const numbersContainer = document.getElementById("numbersContainer");
 const topPrice = document.getElementById("top");
 const bottomPrice = document.getElementById("bottom");
 
-/* เปลี่ยนโหมด */
+/* ----------------------- ฟังก์ชันช่วย ----------------------- */
+function pad2(n){ return n.toString().padStart(2,"0"); }
+function pad3(n){ return n.toString().padStart(3,"0"); }
+
+/* ----------------------- เปลี่ยนโหมด ----------------------- */
 function switchMode(m) {
     mode = m;
-
     document.querySelectorAll(".mode-btn").forEach(btn =>
         btn.classList.remove("active")
     );
@@ -235,18 +235,16 @@ function switchMode(m) {
 
     clearNumbers();
     highlightInput();
-
     bottomPrice.placeholder = (m === "3d") ? "ราคา โต๊ด" : "ราคา ล่าง";
 }
 
-/* ไฮไลต์ */
 function highlightInput() {
     inputNums.classList.add("highlight");
     setTimeout(() => inputNums.classList.remove("highlight"), 200);
     inputNums.focus();
 }
 
-/* แสดง pill */
+/* ----------------------- แสดงเลขแบบ pill ----------------------- */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
@@ -261,7 +259,7 @@ function renderNumbers() {
     });
 }
 
-/* input ช่อง 1 */
+/* ----------------------- ดึงเลขจากช่อง 1 ----------------------- */
 inputNums.addEventListener("input", function () {
     let raw = this.value.trim();
 
@@ -271,8 +269,8 @@ inputNums.addEventListener("input", function () {
 
         parts.forEach(p => {
             let clean = p.replace(/\D/g, "");
-            if (mode === "2d" && clean.length === 2) valid.push(clean);
-            if (mode === "3d" && clean.length === 3) valid.push(clean);
+            if (mode === "2d" && clean.length === 2) valid.push(pad2(clean));
+            if (mode === "3d" && clean.length === 3) valid.push(pad3(clean));
         });
 
         if (valid.length > 0) {
@@ -288,7 +286,8 @@ inputNums.addEventListener("input", function () {
 
     let newNums = [];
     while (digits.length >= chunk) {
-        newNums.push(digits.slice(0, chunk));
+        let cut = digits.slice(0, chunk);
+        newNums.push(mode === "3d" ? pad3(cut) : pad2(cut));
         digits = digits.slice(chunk);
     }
 
@@ -300,41 +299,29 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* ⭐ ฟังก์ชันใหม่ กลับเลข 3 ตัวถูกกติกา */
+/* ----------------------- กลับเลข 3 ตัว ----------------------- */
 function reverse3digit(num) {
     const [a, b, c] = num.split("");
 
-    if (a === b && b === c) {
-        return [num];
-    }
+    if (a === b && b === c) return [num];
 
     if (a === b || a === c || b === c) {
         let set = new Set([
-            a+b+c,
-            a+c+b,
-            b+a+c,
-            b+c+a,
-            c+a+b,
-            c+b+a
+            a+b+c, a+c+b,
+            b+a+c, b+c+a,
+            c+a+b, c+b+a
         ]);
-
-        return Array.from(set).filter(x => {
-            let s = new Set(x.split(""));
-            return s.size === 2;
-        });
+        return [...set].filter(x => new Set(x.split("")).size === 2);
     }
 
     return [
-        a+b+c,
-        a+c+b,
-        b+a+c,
-        b+c+a,
-        c+a+b,
-        c+b+a
+        a+b+c, a+c+b,
+        b+a+c, b+c+a,
+        c+a+b, c+b+a
     ];
 }
 
-/* ⭐ ฟังก์ชันกลับเลข ถูกต้อง */
+/* ----------------------- กลับเลขหลัก ----------------------- */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
@@ -345,24 +332,24 @@ function reverseNumbers() {
 
     currentNums.forEach(num => {
         if (mode === "2d") {
-            result.push(num[1] + num[0]);
+            result.push(pad2(num[1] + num[0]));
         }
 
         if (mode === "3d") {
-            result.push(...reverse3digit(num));
+            let arr = reverse3digit(num).map(pad3);
+            result.push(...arr);
         }
     });
 
     let all = [...currentNums, ...result];
+    all = all.map(n => mode === "3d" ? pad3(n) : pad2(n));
 
-    currentNums = Array.from(new Set(all));
-
+    currentNums = [...new Set(all)];
     currentNums.sort();
-
     renderNumbers();
 }
 
-/* ล้าง */
+/* ----------------------- ล้าง ----------------------- */
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
@@ -372,7 +359,7 @@ function clearNumbers() {
     highlightInput();
 }
 
-/* เพิ่มบิล */
+/* ----------------------- เพิ่มบิล ----------------------- */
 function addBill() {
     if (currentNums.length === 0) return false;
 
@@ -384,10 +371,8 @@ function addBill() {
 
     bills.push({
         nums:[...currentNums],
-        top:t,
-        bottom:b,
-        total:total,
-        mode:mode
+        top:t, bottom:b,
+        total:total, mode:mode
     });
 
     renderBills();
@@ -400,13 +385,13 @@ function addBillAndReset() {
     highlightInput();
 }
 
-/* ลบบิล */
+/* ----------------------- ลบบิล ----------------------- */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/* แสดงบิล */
+/* ----------------------- แสดงบิล ----------------------- */
 function renderBills() {
     let html = "";
     let totalAll = 0;
@@ -452,7 +437,7 @@ function renderBills() {
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* TAB control */
+/* ----------------------- TAB Control ----------------------- */
 document.addEventListener("keydown", function(e){
     if (e.key !== "Tab") return;
     e.preventDefault();
@@ -472,7 +457,7 @@ document.addEventListener("keydown", function(e){
     topPrice.select();
 });
 
-/* SPACE = กลับเลข */
+/* ----------------------- SPACE = กลับเลข ----------------------- */
 document.addEventListener("keydown", function(e){
     if (e.code === "Space") {
         e.preventDefault();
