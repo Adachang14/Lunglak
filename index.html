@@ -26,6 +26,7 @@
         margin-bottom:20px;
     }
 
+    /* ปุ่มโหมด */
     .mode-row {
         display:flex;
         gap:10px;
@@ -44,6 +45,7 @@
         color:white;
     }
 
+    /* ช่อง input */
     input[type="text"] {
         width:100%;
         padding:12px;
@@ -57,6 +59,7 @@
         border-color:#ff44c7 !important;
     }
 
+    /* Pill เลข */
     .numbers-container {
         min-height:50px;
         padding:10px;
@@ -89,6 +92,7 @@
         font-size:16px;
     }
 
+    /* ปุ่ม */
     button {
         padding:12px 16px;
         font-size:16px;
@@ -101,6 +105,7 @@
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
+    /* บิล */
     .bill-box {
         margin-top:20px;
         background:#ffe7f8;
@@ -176,6 +181,7 @@
 
     <h2>หวย Simulator Demo</h2>
 
+    <!-- ปุ่มโหมด -->
     <div class="mode-row">
         <button class="mode-btn active" id="btn2d" onclick="switchMode('2d')">2 ตัว</button>
         <button class="mode-btn" id="btn3d" onclick="switchMode('3d')">3 ตัว</button>
@@ -183,9 +189,11 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
     </div>
 
+    <!-- ช่อง 1 -->
     <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
 
+    <!-- ช่อง 2 -->
     <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
@@ -217,12 +225,10 @@ const numbersContainer = document.getElementById("numbersContainer");
 const topPrice = document.getElementById("top");
 const bottomPrice = document.getElementById("bottom");
 
-function pad2(n){ return n.toString().padStart(2,"0"); }
-function pad3(n){ return n.toString().padStart(3,"0"); }
-
-/* ----------------------- เปลี่ยนโหมด ----------------------- */
+/* เปลี่ยนโหมด */
 function switchMode(m) {
     mode = m;
+
     document.querySelectorAll(".mode-btn").forEach(btn =>
         btn.classList.remove("active")
     );
@@ -233,16 +239,18 @@ function switchMode(m) {
 
     clearNumbers();
     highlightInput();
+
     bottomPrice.placeholder = (m === "3d") ? "ราคา โต๊ด" : "ราคา ล่าง";
 }
 
+/* ไฮไลต์ช่อง 1 */
 function highlightInput() {
     inputNums.classList.add("highlight");
     setTimeout(() => inputNums.classList.remove("highlight"), 200);
     inputNums.focus();
 }
 
-/* ----------------------- แสดงเลขแบบ pill ----------------------- */
+/* แสดง Pill */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
@@ -257,18 +265,19 @@ function renderNumbers() {
     });
 }
 
-/* ----------------------- ดึงเลขจากช่อง 1 ----------------------- */
+/* 🎯 ดึงเลขจากช่อง 1 (แก้กอปมาไม่มั่ว 100%) */
 inputNums.addEventListener("input", function () {
     let raw = this.value.trim();
 
+    // ถ้ามี space → แยกตรงๆ
     if (raw.includes(" ")) {
         let parts = raw.split(/\s+/);
         let valid = [];
 
         parts.forEach(p => {
             let clean = p.replace(/\D/g, "");
-            if (mode === "2d" && clean.length === 2) valid.push(pad2(clean));
-            if (mode === "3d" && clean.length === 3) valid.push(pad3(clean));
+            if (mode === "2d" && clean.length === 2) valid.push(clean);
+            if (mode === "3d" && clean.length === 3) valid.push(clean);
         });
 
         if (valid.length > 0) {
@@ -279,13 +288,13 @@ inputNums.addEventListener("input", function () {
         return;
     }
 
+    // ถ้าพิมพ์เอง
     let digits = raw.replace(/\D/g, "");
     let chunk = (mode === "3d") ? 3 : 2;
 
     let newNums = [];
     while (digits.length >= chunk) {
-        let cut = digits.slice(0, chunk);
-        newNums.push(mode === "3d" ? pad3(cut) : pad2(cut));
+        newNums.push(digits.slice(0, chunk));
         digits = digits.slice(chunk);
     }
 
@@ -297,60 +306,52 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* ----------------------- กลับเลข 3 ตัว ----------------------- */
-function reverse3digit(num) {
-    const [a, b, c] = num.split("");
-
-    if (a === b && b === c) return [num];
-
-    if (a === b || a === c || b === c) {
-        let set = new Set([
-            a+b+c, a+c+b,
-            b+a+c, b+c+a,
-            c+a+b, c+b+a
-        ]);
-        return [...set].filter(x => new Set(x.split("")).size === 2);
-    }
-
-    return [
-        a+b+c, a+c+b,
-        b+a+c, b+c+a,
-        c+a+b, c+b+a
-    ];
-}
-
-/* ----------------------- กลับเลข ----------------------- */
+/* 🎯 กลับเลข 3 ตัวแบบไม่ซ้ำ + ไม่มั่ว + ถูกกติกา */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    let result = [];
+    let reversed = [];
 
     currentNums.forEach(num => {
 
+        // 2 ตัว
         if (mode === "2d") {
-            let rev = pad2(num[1] + num[0]);
-            result.push(rev);
+            reversed.push(num[1] + num[0]);
         }
 
+        // 3 ตัว
         if (mode === "3d") {
-            let arr = reverse3digit(num).map(pad3);
-            result.push(...arr);
+            let [a,b,c] = num.split("");
+
+            let set = new Set();
+
+            set.add(a+b+c);
+            set.add(a+c+b);
+            set.add(b+a+c);
+            set.add(b+c+a);
+            set.add(c+a+b);
+            set.add(c+b+a);
+
+            reversed.push(...Array.from(set));
         }
     });
 
-    let all = [...currentNums, ...result];
+    // ลบเลขซ้ำออกทั้งหมด (ตัวสำคัญที่สุดของแก)
+    let unified = new Set([...currentNums, ...reversed]);
 
-    all = all.map(n => mode === "3d" ? pad3(n) : pad2(n));
+    // แปลงกลับเป็น array
+    currentNums = Array.from(unified);
 
-    currentNums = [...new Set(all)];
+    // เรียงจากน้อยไปมาก (เพื่อความสวยงาม)
     currentNums.sort();
+
     renderNumbers();
 }
 
-/* ----------------------- ล้างเลข ----------------------- */
+/* ล้างเลข */
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
@@ -360,7 +361,7 @@ function clearNumbers() {
     highlightInput();
 }
 
-/* ----------------------- เพิ่มบิล ----------------------- */
+/* เพิ่มบิล */
 function addBill() {
     if (currentNums.length === 0) return false;
 
@@ -388,13 +389,13 @@ function addBillAndReset() {
     highlightInput();
 }
 
-/* ----------------------- ลบบิล ----------------------- */
+/* ลบบิล */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/* ----------------------- แสดงบิล ----------------------- */
+/* UI บิล */
 function renderBills() {
     let html = "";
     let totalAll = 0;
@@ -410,15 +411,15 @@ function renderBills() {
 
                 <div class="bill-price">
                     ${b.mode === "3d"
-                        ? \`บน × ล่าง × โต๊ด\`
-                        : \`บน × ล่าง\`
+                        ? `บน × ล่าง × โต๊ด`
+                        : `บน × ล่าง`
                     }
                 </div>
 
                 <div class="bill-multiply">
                     ${b.mode === "3d"
-                        ? \`${b.top} × ${b.bottom} × ${b.bottom}\`
-                        : \`${b.top} × ${b.bottom}\`
+                        ? `${b.top} × ${b.bottom} × ${b.bottom}`
+                        : `${b.top} × ${b.bottom}`
                     }
                 </div>
 
@@ -436,12 +437,11 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-
     document.getElementById("totalAll").innerText =
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* ----------------------- TAB control ----------------------- */
+/* TAB = บน → ล่าง → เพิ่มบิล */
 document.addEventListener("keydown", function(e){
     if (e.key !== "Tab") return;
     e.preventDefault();
@@ -461,7 +461,7 @@ document.addEventListener("keydown", function(e){
     topPrice.select();
 });
 
-/* ----------------------- SPACE = กลับเลข ----------------------- */
+/* SPACE = กลับเลข */
 document.addEventListener("keydown", function(e){
     if (e.code === "Space") {
         e.preventDefault();
@@ -471,4 +471,4 @@ document.addEventListener("keydown", function(e){
 </script>
 
 </body>
-</html>
+</html>  นี่คือโค้ด ตั้งต้น
