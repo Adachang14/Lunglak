@@ -1,1 +1,303 @@
 
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>หวย Simulator Demo</title>
+
+<style>
+    body {
+        background:#f7d3f2;
+        font-family:'Sarabun', sans-serif;
+        padding:20px;
+    }
+    .box {
+        width:100%;
+        max-width:500px;
+        margin:auto;
+        background:#fff;
+        padding:20px;
+        border-radius:15px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+        margin-top:0;
+        color:#c449d5;
+        text-align:center;
+    }
+
+    .tabs {
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        justify-content:center;
+        margin-bottom:15px;
+    }
+    .tab {
+        padding:10px 15px;
+        background:#ffe1ff;
+        border-radius:10px;
+        border:1px solid #cf9cd7;
+        cursor:pointer;
+        font-weight:bold;
+    }
+    .active {
+        background:#d85cff;
+        color:white;
+    }
+
+    .row {
+        display:flex;
+        gap:10px;
+        margin:10px 0;
+    }
+
+    input {
+        width:100%;
+        padding:12px;
+        border-radius:10px;
+        border:1px solid #ccc;
+        font-size:16px;
+    }
+
+    button {
+        padding:12px 16px;
+        font-size:16px;
+        border-radius:10px;
+        border:none;
+        cursor:pointer;
+        font-weight:bold;
+    }
+    .btn-add { background:#ff44c7; color:white; }
+    .btn-rev { background:#ffec7c; }
+
+    .bill-box {
+        margin-top:15px;
+        background:#ffe6f6;
+        padding:10px;
+        border-radius:15px;
+    }
+
+    .bill {
+        background:white;
+        padding:12px;
+        border-radius:10px;
+        margin-bottom:10px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-size:17px;
+    }
+
+    .del-btn {
+        color:red;
+        font-size:20px;
+        cursor:pointer;
+    }
+
+    .total {
+        margin-top:15px;
+        text-align:center;
+        font-weight:bold;
+        font-size:22px;
+    }
+</style>
+
+</head>
+<body>
+
+<div class="box">
+
+    <h2>แทงหวย Simulator</h2>
+
+    <!-- tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="setMode('2')">2 ตัว</div>
+        <div class="tab" onclick="setMode('3')">3 ตัว</div>
+        <div class="tab" onclick="setMode('19')">19 ประตู</div>
+    </div>
+
+    <!-- input area -->
+    <div id="formArea"></div>
+
+    <!-- bill list -->
+    <div class="bill-box" id="billList"></div>
+
+    <!-- total -->
+    <div class="total" id="total">รวมทั้งหมด: 0 บาท</div>
+
+</div>
+
+
+<script>
+
+let mode = "2";
+let bills = [];
+
+function setMode(m) {
+    mode = m;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    if (m === "2") document.querySelectorAll(".tab")[0].classList.add("active");
+    if (m === "3") document.querySelectorAll(".tab")[1].classList.add("active");
+    if (m === "19") document.querySelectorAll(".tab")[2].classList.add("active");
+    loadForm();
+}
+
+function loadForm() {
+
+    if (mode === "2") {
+        formArea.innerHTML = `
+            <div class="row">
+                <input id="num" maxlength="2" placeholder="เลข 2 ตัว เช่น 84">
+            </div>
+            <div class="row">
+                <input id="top" type="number" placeholder="บน">
+                <input id="bottom" type="number" placeholder="ล่าง">
+            </div>
+            <div class="row">
+                <button class="btn-rev" onclick="reverseNum()">กลับเลข</button>
+                <button class="btn-add" onclick="addBill2()">+ เพิ่มบิล</button>
+            </div>
+        `;
+    }
+
+    if (mode === "3") {
+        formArea.innerHTML = `
+            <div class="row">
+                <input id="num" maxlength="3" placeholder="เลข 3 ตัว เช่น 123">
+            </div>
+            <div class="row">
+                <input id="top" type="number" placeholder="บน">
+                <input id="tod" type="number" placeholder="โต๊ด">
+            </div>
+            <div class="row">
+                <button class="btn-add" onclick="addBill3()">+ เพิ่มบิล</button>
+            </div>
+        `;
+    }
+
+    if (mode === "19") {
+        formArea.innerHTML = `
+            <div class="row">
+                <input id="num" maxlength="1" placeholder="เลขเดียว เช่น 8">
+            </div>
+            <div class="row">
+                <input id="top" type="number" placeholder="บน">
+                <input id="bottom" type="number" placeholder="ล่าง">
+            </div>
+            <div class="row">
+                <button class="btn-add" onclick="addBill19()">+ เพิ่มบิล</button>
+            </div>
+        `;
+    }
+
+}
+
+loadForm();
+
+
+/* -------------- Logic for each mode ---------------- */
+
+function reverseNum() {
+    let n = document.getElementById("num").value;
+    if (n.length === 2) {
+        document.getElementById("num").value = n[1] + n[0];
+    }
+}
+
+function addBill2() {
+    let n = num.value;
+    if (n.length !== 2) return alert("กรอกเลข 2 ตัว");
+
+    let t = Number(top.value || 0);
+    let b = Number(bottom.value || 0);
+
+    bills.push({
+        type: "2 ตัว",
+        numbers: [n, n[1]+n[0]],
+        top: t,
+        bottom: b,
+        total: (t+b)*2
+    });
+
+    render();
+}
+
+function addBill3() {
+    let n = num.value;
+    if (n.length !== 3) return alert("กรอกเลข 3 ตัว");
+
+    let t = Number(top.value || 0);
+    let td = Number(tod.value || 0);
+
+    bills.push({
+        type: "3 ตัว",
+        numbers: [n],
+        top: t,
+        tod: td,
+        total: t + td
+    });
+
+    render();
+}
+
+function addBill19() {
+    let n = num.value;
+    if (n.length !== 1) return alert("ใส่เลขตัวเดียว");
+
+    let t = Number(top.value || 0);
+    let b = Number(bottom.value || 0);
+
+    // generate 19 doors
+    let result = [];
+    for (let i=0;i<=99;i++){
+        let s = i.toString().padStart(2,'0');
+        if (s.includes(n)) result.push(s);
+    }
+
+    bills.push({
+        type: "19 ประตู",
+        numbers: result,
+        top: t,
+        bottom: b,
+        total: result.length * (t+b)
+    });
+
+    render();
+}
+
+/* ---------------- render bills ---------------- */
+
+function render() {
+    let html = "";
+    let sum = 0;
+
+    bills.forEach((b,i)=>{
+        sum += b.total;
+
+        html += `
+            <div class="bill">
+                <div>
+                    <b>${b.type}</b><br>
+                    เลข: ${b.numbers.join(", ")}<br>
+                    รวมบิล: ${b.total} บาท
+                </div>
+                <div class="del-btn" onclick="delBill(${i})">×</div>
+            </div>
+        `;
+    });
+
+    billList.innerHTML = html;
+    total.innerHTML = `รวมทั้งหมด: ${sum} บาท`;
+}
+
+function delBill(i) {
+    bills.splice(i,1);
+    render();
+}
+
+</script>
+
+</body>
+</html>
