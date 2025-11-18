@@ -144,12 +144,12 @@
         margin-bottom:8px;
     }
 
-    /* ปรับแก้ให้ 3 ตัวขึ้นบรรทัดตาม 17 ตัวแบบไม่ล้นอีก */
+    /* กล่องเลขในบิล */
     .bill-nums {
         background:#f8f8f8;
         padding:10px;
         border-radius:10px;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
         font-size:15px;
         margin-bottom:8px;
         display:block;
@@ -242,6 +242,38 @@ const bottomPrice = document.getElementById("bottom");
 
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
+
+/* ========== ฟังก์ชันวัดความกว้างข้อความ แล้วแบ่งบรรทัด ========== */
+const _measureCanvas = document.createElement("canvas");
+const _measureCtx = _measureCanvas.getContext("2d");
+// ให้ฟอนต์ตรงกับ .bill-nums
+_measureCtx.font = "15px 'Sarabun', sans-serif";
+
+function groupByWidth(nums, maxWidth){
+    const lines = [];
+    let current = "";
+    let currentWidth = 0;
+
+    nums.forEach((n, index) => {
+        // ถ้ามีตัวก่อนหน้าแล้ว ให้เผื่อ space ข้างหน้า
+        const token = (current ? " " : "") + n;
+        const w = _measureCtx.measureText(token).width;
+
+        if (current && currentWidth + w > maxWidth){
+            // ถ้าเกินความกว้างให้ดันขึ้นบรรทัดใหม่
+            lines.push(current);
+            current = n;
+            currentWidth = _measureCtx.measureText(n).width;
+        } else {
+            current += (current ? " " : "") + n;
+            currentWidth += w;
+        }
+    });
+
+    if(current) lines.push(current);
+    return lines;
+}
+/* ================================================================ */
 
 /* ------------- SWITCH MODE ------------- */
 function switchMode(m){
@@ -430,14 +462,17 @@ function renderBills(){
     let html="";
     let total=0;
 
+    // ใช้ความกว้างของ .bill-box เป็นฐานคำนวณ
+    const billBox = document.getElementById("billList");
+    // กันขอบซ้ายขวา, padding ฯลฯ ออกไปหน่อย
+    const maxWidth = Math.max((billBox.clientWidth || 0) - 40, 100);
+
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        let groups=[];
-        for(let x=0;x<b.nums.length;x+=17){
-            groups.push(b.nums.slice(x,x+17).join(" "));
-        }
-        let lines=groups.map(l=>`<div class="bill-line">${l}</div>`).join("");
+        // ใช้ groupByWidth แทนการตัดทีละ 17 ตัว
+        const lineStrings = groupByWidth(b.nums, maxWidth);
+        const lines = lineStrings.map(l=>`<div class="bill-line">${l}</div>`).join("");
 
         html+=`
         <div class="bill">
