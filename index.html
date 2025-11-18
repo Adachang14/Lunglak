@@ -93,7 +93,7 @@
     <h2>หวย Simulator Demo</h2>
 
     <!-- ช่องใส่เลข -->
-    <textarea id="numbers" placeholder="ใส่เลข เช่น 46 64 69 96"></textarea>
+    <textarea id="numbers" placeholder="ใส่เลข เช่น 46 64 69 96 หรือ 30 34 37 ..."></textarea>
 
     <!-- ปุ่มกลับเลข -->
     <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
@@ -125,24 +125,19 @@ let bills = [];
 /* ------------------- กลับเลข ---------------------- */
 
 function reverseNumbers() {
-    let raw = document.getElementById("numbers").value.trim();
+    let raw = document.getElementById("numbers").value;
 
-    if (raw === "") return;
-
-    // แยกเลข
-    let arr = raw.split(/\s+/);
+    // ดึงเฉพาะเลข 2 หลักจากช่อง (ตัดข้อความอื่นออก)
+    let arr = raw.match(/\b\d{2}\b/g) || [];
 
     let reversedList = [];
 
     arr.forEach(num => {
-        if (num.length === 2) {
-            let newNum = num[1] + num[0];
-            reversedList.push(newNum);
-        }
+        reversedList.push(num[1] + num[0]); // กลับเลข
     });
 
-    // ต่อเลขกลับท้ายช่อง
-    document.getElementById("numbers").value = raw + " " + reversedList.join(" ");
+    // ต่อเลขกลับท้ายช่อง (ตามที่มึงต้องการ: เอามาหมด)
+    document.getElementById("numbers").value = arr.join(" ") + " " + reversedList.join(" ");
 }
 
 
@@ -150,10 +145,12 @@ function reverseNumbers() {
 
 function addBill() {
 
-    let raw = document.getElementById("numbers").value.trim();
-    if (raw === "") return alert("กรอกเลขก่อน");
+    let raw = document.getElementById("numbers").value;
 
-    let arr = raw.split(/\s+/);
+    // อ่านเฉพาะเลข 2 หลักเท่านั้น
+    let arr = raw.match(/\b\d{2}\b/g) || [];
+
+    if (arr.length === 0) return alert("ไม่พบเลข 2 หลักในช่อง");
 
     let t = Number(document.getElementById("top").value || 0);
     let b = Number(document.getElementById("bottom").value || 0);
