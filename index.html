@@ -105,12 +105,12 @@
     <h2>หวย Simulator Demo</h2>
 
     <!-- ช่อง 1 -->
-    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข (ระบบจะอัปเดตอัตโนมัติ)</div>
-    <input id="inputNums" type="text" placeholder="เช่น 23 14 97 =20*ลาวอา">
+    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข (ครบ 2 หลักจะเด้งไปช่อง 2 อัตโนมัติ)</div>
+    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710141713=20*20กลับบนลาว">
 
     <!-- ช่อง 2 -->
     <div class="label">ช่อง 2: ผลลัพธ์เลขล้วน (ใช้กลับเลข + คำนวณ)</div>
-    <textarea id="numbersDisplay" readonly placeholder="เลขจะมาแสดงที่นี่"></textarea>
+    <textarea id="numbersDisplay" readonly placeholder="เลขจะมาแสดงที่นี่ เช่น 12 25 30 34"></textarea>
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
@@ -132,7 +132,6 @@
 
 
 <script>
-
 let bills = [];
 
 // ดึงเฉพาะเลข 2 หลักจากข้อความ
@@ -140,38 +139,61 @@ function extractNumbers(text) {
     return text.match(/\b\d{2}\b/g) || [];
 }
 
-/* =========== AUTO UPDATE ช่อง 2 เมื่อช่อง 1 เปลี่ยน =========== */
-const inputNums = document.getElementById("inputNums");
+const inputNums      = document.getElementById("inputNums");
 const numbersDisplay = document.getElementById("numbersDisplay");
 
-inputNums.addEventListener("input", function(){
-    const raw = this.value;
-    const nums = extractNumbers(raw);
-    numbersDisplay.value = nums.join(" ");
+/* ==== ช่อง 1: ทุกครั้งที่พิมพ์ / วาง ให้จับทีละ 2 หลักแล้วโยนลงช่อง 2 ==== */
+inputNums.addEventListener("input", function () {
+    let raw = this.value;
+
+    // เอาเฉพาะส่วนก่อน "=" (กัน 20*20 ด้านหลัง)
+    let mainPart = raw.split("=")[0];
+
+    // เอาแต่ตัวเลข
+    let digits = mainPart.replace(/\D/g, "");
+
+    let newNums = [];
+    // จับทีละ 2 หลัก
+    while (digits.length >= 2) {
+        newNums.push(digits.slice(0, 2));
+        digits = digits.slice(2);
+    }
+
+    if (newNums.length > 0) {
+        const existing = extractNumbers(numbersDisplay.value);
+        numbersDisplay.value = existing.concat(newNums).join(" ");
+    }
+
+    // เหลือไว้แค่เศษตัวเลขที่ยังไม่ครบ 2 หลัก (เผื่อกำลังกดตัวแรกของคู่ใหม่)
+    this.value = digits;
 });
 
-/* =========== กลับเลขในช่อง 2 =========== */
+/* ==== กลับเลขในช่อง 2 ==== */
 function reverseNumbers() {
-    const raw = numbersDisplay.value;
+    const raw  = numbersDisplay.value;
     const nums = extractNumbers(raw);
 
-    if (nums.length === 0){
+    if (nums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
     const reversed = [];
-    nums.forEach(num => reversed.push(num[1] + num[0]));
+    nums.forEach(num => {
+        if (num.length === 2) {
+            reversed.push(num[1] + num[0]);
+        }
+    });
 
     numbersDisplay.value = nums.join(" ") + " " + reversed.join(" ");
 }
 
-/* =========== ล้างเลขในช่อง 2 =========== */
+/* ==== ล้างเลขในช่อง 2 ==== */
 function clearNumbers() {
     numbersDisplay.value = "";
 }
 
-/* =========== เพิ่มบิล =========== */
+/* ==== เพิ่มบิลจากเลขในช่อง 2 ==== */
 function addBill() {
     const nums = extractNumbers(numbersDisplay.value);
 
@@ -183,11 +205,10 @@ function addBill() {
     const t = Number(document.getElementById("top").value || 0);
     const b = Number(document.getElementById("bottom").value || 0);
 
-    const count = nums.length;
-
-    const sumTop = count * t;
-    const sumBottom = count * b;
-    const sumBill = sumTop + sumBottom;
+    const count      = nums.length;
+    const sumTop     = count * t;
+    const sumBottom  = count * b;
+    const sumBill    = sumTop + sumBottom;
 
     bills.push({
         nums,
@@ -199,18 +220,18 @@ function addBill() {
     renderBills();
 }
 
-/* =========== ลบบิล =========== */
+/* ==== ลบบิล ==== */
 function delBill(i) {
-    bills.splice(i,1);
+    bills.splice(i, 1);
     renderBills();
 }
 
-/* =========== แสดงบิล =========== */
+/* ==== แสดงบิล ==== */
 function renderBills() {
-    let html = "";
+    let html     = "";
     let totalAll = 0;
 
-    bills.forEach((b,i)=>{
+    bills.forEach((b, i) => {
         totalAll += b.total;
 
         html += `
@@ -227,15 +248,15 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText = 
+    document.getElementById("totalAll").innerText =
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* =========== สเปซบาร์ = กลับเลข (ถ้าไม่ได้โฟกัสช่อง 1) =========== */
+/* ==== สเปซบาร์ = กลับเลข (ถ้าไม่ได้โฟกัสช่อง 1) ==== */
 document.addEventListener("keydown", function(e){
-    const tag = document.activeElement.id;
+    const activeId = document.activeElement.id;
 
-    if ((e.code === "Space" || e.key === " ") && tag !== "inputNums") {
+    if ((e.code === "Space" || e.key === " ") && activeId !== "inputNums") {
         e.preventDefault();
         reverseNumbers();
     }
