@@ -52,10 +52,7 @@
         font-weight:bold;
     }
 
-    /* ปิด focus ของปุ่ม */
-    button:focus {
-        outline: none !important;
-    }
+    button:focus { outline: none !important; }
 
     .btn-rev { background:#ffe06c; }
     .btn-add { background:#ff44c7; color:white; }
@@ -95,25 +92,19 @@
 
     <h2>หวย Simulator Demo</h2>
 
-    <!-- ช่องใส่เลข -->
     <textarea id="numbers" placeholder="ใส่เลข เช่น 46 64 69 96"></textarea>
 
-    <!-- ปุ่มกลับเลข -->
     <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
 
-    <!-- ราคาบน ล่าง -->
     <div class="row">
         <input id="top" type="number" placeholder="ราคา บน">
         <input id="bottom" type="number" placeholder="ราคา ล่าง">
     </div>
 
-    <!-- เพิ่มบิล -->
     <button class="btn-add" onclick="addBill()">+ เพิ่มบิล</button>
 
-    <!-- รายการบิล -->
     <div class="bill-box" id="billList"></div>
 
-    <!-- รวมทั้งหมด -->
     <div id="totalAll" class="total-all">รวมทั้งหมด: 0 บาท</div>
 
 </div>
@@ -123,43 +114,38 @@
 
 let bills = [];
 
-/* ----------------- ฟังก์ชันล้างข้อความขยะ ---------------- */
-function cleanInput(raw) {
-    let arr = raw.match(/\b\d{2}\b/g);
-    return arr ? arr.join(" ") : "";
+/* =============== ฟังก์ชันดึงเลข 2 หลักเท่านั้น =============== */
+function extractNumbers(text) {
+    return text.match(/\b\d{2}\b/g) || [];
 }
 
-/* ตัดข้อความขยะโดยอัตโนมัติทุกครั้งที่พิมพ์หรือวาง */
-document.getElementById("numbers").addEventListener("input", function(){
-    let cleaned = cleanInput(this.value);
-    this.value = cleaned;
-});
-
-/* ------------------- กลับเลข ---------------------- */
+/* ===================== ปุ่มกลับเลข ===================== */
 function reverseNumbers() {
     let raw = document.getElementById("numbers").value;
 
-    let arr = raw.match(/\b\d{2}\b/g) || [];
+    // ดึงเฉพาะเลข 2 ตัว (ตัดขยะทั้งหมด)
+    let arr = extractNumbers(raw);
 
-    if(arr.length === 0){
+    if (arr.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
+    // กลับเลขทั้งหมดแบบเพิ่มซ้ำตามที่ต้องการ
     let reversedList = [];
+    arr.forEach(num => reversedList.push(num[1] + num[0]));
 
-    arr.forEach(num => {
-        reversedList.push(num[1] + num[0]);
-    });
-
+    // ต่อท้ายเลขกลับทั้งหมด
     document.getElementById("numbers").value = arr.join(" ") + " " + reversedList.join(" ");
 }
 
-/* ------------------- เพิ่มบิล ---------------------- */
+/* ===================== เพิ่มบิล ======================= */
 function addBill() {
 
     let raw = document.getElementById("numbers").value;
-    let arr = raw.match(/\b\d{2}\b/g) || [];
+
+    // ดึงเฉพาะเลข 2 หลักในช่อง
+    let arr = extractNumbers(raw);
 
     if (arr.length === 0) return alert("ไม่พบเลข 2 หลัก");
 
@@ -182,13 +168,13 @@ function addBill() {
     renderBills();
 }
 
-/* ------------------- ลบ ---------------------- */
+/* ===================== ลบบิล ======================= */
 function delBill(i) {
     bills.splice(i,1);
     renderBills();
 }
 
-/* ------------------- แสดงบิล ---------------------- */
+/* ===================== แสดงบิล ======================= */
 function renderBills() {
 
     let html = "";
@@ -212,10 +198,13 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerHTML = `รวมทั้งหมด: ${totalAll} บาท`;
+
+    document.getElementById("totalAll").innerHTML =
+        `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
 </script>
 
 </body>
 </html>
+
