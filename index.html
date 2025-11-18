@@ -91,19 +91,25 @@
 
     <h2>หวย Simulator Demo</h2>
 
+    <!-- ช่องใส่เลข -->
     <textarea id="numbers" placeholder="ใส่เลข เช่น 46 64 69 96"></textarea>
 
+    <!-- ปุ่มกลับเลข (สำรอง กดเมาส์ได้ด้วย) -->
     <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
 
+    <!-- ราคาบน ล่าง -->
     <div class="row">
         <input id="top" type="number" placeholder="ราคา บน">
         <input id="bottom" type="number" placeholder="ราคา ล่าง">
     </div>
 
+    <!-- เพิ่มบิล -->
     <button class="btn-add" onclick="addBill()">+ เพิ่มบิล</button>
 
+    <!-- รายการบิล -->
     <div class="bill-box" id="billList"></div>
 
+    <!-- รวมทั้งหมด -->
     <div id="totalAll" class="total-all">รวมทั้งหมด: 0 บาท</div>
 
 </div>
@@ -118,51 +124,65 @@ function extractNumbers(text) {
     return text.match(/\b\d{2}\b/g) || [];
 }
 
-/* ล้างข้อความขยะเฉพาะตอนวาง (paste) */
-document.getElementById("numbers").addEventListener("paste", function(e){
+/* ล้างข้อความขยะตอนวาง (paste) เท่านั้น */
+const numbersEl = document.getElementById("numbers");
+
+numbersEl.addEventListener("paste", function(e){
     setTimeout(() => {
-        let raw = this.value;
-        let clean = extractNumbers(raw).join(" ");
+        const raw = this.value;
+        const clean = extractNumbers(raw).join(" ");
         this.value = clean;
     }, 10);
 });
 
-/* กลับเลข */
+/* กดสเปซบาร์ = สั่งกลับเลข */
+numbersEl.addEventListener("keydown", function(e){
+    if (e.code === "Space" || e.key === " ") {
+        e.preventDefault();      // ไม่ให้ใส่ช่องว่างเพิ่ม
+        reverseNumbers();        // เรียกฟังก์ชันกลับเลขแทน
+    }
+});
+
+/* กลับเลข (ใช้ได้ทั้งกดปุ่ม + สเปซบาร์) */
 function reverseNumbers() {
-    let raw = document.getElementById("numbers").value;
+    const raw = numbersEl.value;
 
-    // เก็บเฉพาะเลข 2 หลักก่อน (ตัดขยะ)
-    let arr = extractNumbers(raw);
+    // ดึงเฉพาะเลข 2 หลัก (ตัดขยะ เช่น =20*20กลับบนลาว ฯลฯ)
+    const arr = extractNumbers(raw);
 
-    if(arr.length === 0){
+    if (arr.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    // กลับเลขแบบเพิ่มซ้ำตามต้องการ
-    let reversed = [];
-    arr.forEach(num => reversed.push(num[1] + num[0]));
+    // กลับเลขทุกตัวแบบเพิ่มซ้ำ
+    const reversed = [];
+    arr.forEach(num => {
+        reversed.push(num[1] + num[0]);
+    });
 
-    // รวมกลับเข้าไป
-    document.getElementById("numbers").value = arr.join(" ") + " " + reversed.join(" ");
+    // แสดงเลขเดิม + เลขกลับต่อท้าย
+    numbersEl.value = arr.join(" ") + " " + reversed.join(" ");
 }
 
 /* เพิ่มบิล */
 function addBill() {
+    const raw = numbersEl.value;
+    const arr = extractNumbers(raw);
 
-    let raw = document.getElementById("numbers").value;
-    let arr = extractNumbers(raw);
+    if (arr.length === 0) {
+        alert("ไม่พบเลข 2 หลัก");
+        return;
+    }
 
-    if (arr.length === 0) return alert("ไม่พบเลข 2 หลัก");
+    const t = Number(document.getElementById("top").value || 0);
+    const b = Number(document.getElementById("bottom").value || 0);
 
-    let t = Number(document.getElementById("top").value || 0);
-    let b = Number(document.getElementById("bottom").value || 0);
+    const count = arr.length;
 
-    let count = arr.length;
-
-    let sumTop = count * t;
-    let sumBottom = count * b;
-    let sumBill = sumTop + sumBottom;
+    const sumTop = count * t;
+    const sumBottom = count * b;
+    const sumBill = sumTop + sumBottom;
 
     bills.push({
         nums: arr,
@@ -174,19 +194,18 @@ function addBill() {
     renderBills();
 }
 
-/* ลบ */
+/* ลบบิล */
 function delBill(i) {
     bills.splice(i,1);
     renderBills();
 }
 
-/* แสดงบิล */
+/* แสดงบิลทั้งหมด */
 function renderBills() {
-
     let html = "";
     let totalAll = 0;
 
-    bills.forEach((b,i)=>{
+    bills.forEach((b,i) => {
         totalAll += b.total;
 
         html += `
@@ -203,8 +222,7 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerHTML =
-        `รวมทั้งหมด: ${totalAll} บาท`;
+    document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
 </script>
