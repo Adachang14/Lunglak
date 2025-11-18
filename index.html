@@ -25,7 +25,7 @@
         color:#c449d5;
         margin-bottom:20px;
     }
-    textarea, input[type="text"] {
+    input[type="text"] {
         width:100%;
         padding:12px;
         border-radius:10px;
@@ -33,10 +33,26 @@
         font-size:16px;
         box-sizing:border-box;
     }
-    #numbersDisplay {
-        height:90px;
-        resize:none;
+    .numbers-container {
+        min-height:50px;
+        padding:10px;
+        border-radius:10px;
+        border:1px solid #ddd;
         background:#fffafc;
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        margin-top:4px;
+    }
+    .num-pill {
+        background:#1e6bff;
+        color:#fff;
+        padding:6px 10px;
+        border-radius:8px;
+        font-size:15px;
+        font-weight:bold;
+        border:none;
+        cursor:pointer;
     }
     .row { display:flex; gap:10px; margin:10px 0; }
 
@@ -109,8 +125,8 @@
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710141713=20*20กลับบนลาว">
 
     <!-- ช่อง 2 -->
-    <div class="label">ช่อง 2: ผลลัพธ์เลขล้วน (ใช้กลับเลข + คำนวณ)</div>
-    <textarea id="numbersDisplay" readonly placeholder="เลขจะมาแสดงที่นี่ เช่น 12 25 30 34"></textarea>
+    <div class="label">ช่อง 2: ผลลัพธ์เลขล้วน (แตะที่กล่องเลขเพื่อลบทีละตัว)</div>
+    <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
@@ -134,22 +150,34 @@
 <script>
 let bills = [];
 let tabCount = 0;
+let currentNums = []; // เก็บเลขทั้งหมดในช่อง 2 เป็น array
 
-// ดึงเฉพาะเลข 2 หลักจากข้อความ
-function extractNumbers(text) {
-    return text.match(/\b\d{2}\b/g) || [];
+const inputNums       = document.getElementById("inputNums");
+const numbersContainer= document.getElementById("numbersContainer");
+const topPrice        = document.getElementById("top");
+const bottomPrice     = document.getElementById("bottom");
+
+/* ===== ฟังก์ชันแสดงเลขในช่อง 2 เป็นกล่องคลิกได้ ===== */
+function renderNumbers() {
+    numbersContainer.innerHTML = "";
+    currentNums.forEach((num, index) => {
+        const btn = document.createElement("button");
+        btn.className = "num-pill";
+        btn.textContent = num;
+        btn.title = "คลิกเพื่อลบเลขนี้";
+        btn.onclick = () => {
+            currentNums.splice(index, 1);
+            renderNumbers();
+        };
+        numbersContainer.appendChild(btn);
+    });
 }
 
-const inputNums      = document.getElementById("inputNums");
-const numbersDisplay = document.getElementById("numbersDisplay");
-const topPrice       = document.getElementById("top");
-const bottomPrice    = document.getElementById("bottom");
-
-/* ==== ช่อง 1: ทุกครั้งที่พิมพ์ / วาง ให้จับทีละ 2 หลักแล้วโยนลงช่อง 2 ==== */
+/* ===== ช่อง 1: ทุกครั้งที่พิมพ์ / วาง ให้จับทีละ 2 หลักแล้วโยนลง currentNums ===== */
 inputNums.addEventListener("input", function () {
     let raw = this.value;
 
-    // เอาเฉพาะส่วนก่อน "=" (กัน 20*20 ด้านหลัง)
+    // เอาเฉพาะส่วนก่อน "=" (กันพวก =20*20 ตามหลัง)
     let mainPart = raw.split("=")[0];
 
     // เอาแต่ตัวเลข
@@ -162,44 +190,39 @@ inputNums.addEventListener("input", function () {
     }
 
     if (newNums.length > 0) {
-        const existing = extractNumbers(numbersDisplay.value);
-        numbersDisplay.value = existing.concat(newNums).join(" ");
+        currentNums = currentNums.concat(newNums);
+        renderNumbers();
     }
 
     // เหลือไว้แค่เศษตัวเลขที่ยังไม่ครบ 2 หลัก
     this.value = digits;
 });
 
-/* ==== กลับเลขในช่อง 2 ==== */
+/* ===== กลับเลขใน currentNums ===== */
 function reverseNumbers() {
-    const raw  = numbersDisplay.value;
-    const nums = extractNumbers(raw);
-
-    if (nums.length === 0) {
+    if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    const reversed = [];
-    nums.forEach(num => {
-        if (num.length === 2) {
-            reversed.push(num[1] + num[0]);
-        }
+    const reversed = currentNums.map(num => {
+        if (num.length === 2) return num[1] + num[0];
+        return num;
     });
 
-    numbersDisplay.value = nums.join(" ") + " " + reversed.join(" ");
+    currentNums = currentNums.concat(reversed);
+    renderNumbers();
 }
 
-/* ==== ล้างเลขในช่อง 2 ==== */
+/* ===== ล้างเลขทั้งหมด ===== */
 function clearNumbers() {
-    numbersDisplay.value = "";
+    currentNums = [];
+    renderNumbers();
 }
 
-/* ==== เพิ่มบิล (core) ==== */
+/* ===== เพิ่มบิล (core) ===== */
 function addBill() {
-    const nums = extractNumbers(numbersDisplay.value);
-
-    if (nums.length === 0) {
+    if (currentNums.length === 0) {
         alert("ยังไม่มีเลขในช่อง 2");
         return false;
     }
@@ -207,13 +230,13 @@ function addBill() {
     const t = Number(topPrice.value || 0);
     const b = Number(bottomPrice.value || 0);
 
-    const count      = nums.length;
+    const count      = currentNums.length;
     const sumTop     = count * t;
     const sumBottom  = count * b;
     const sumBill    = sumTop + sumBottom;
 
     bills.push({
-        nums,
+        nums: [...currentNums], // clone array
         top: t,
         bottom: b,
         total: sumBill
@@ -223,12 +246,11 @@ function addBill() {
     return true;
 }
 
-/* ==== เพิ่มบิล + ล้างค่าพร้อมลงใหม่ ==== */
+/* ===== เพิ่มบิล + ล้างค่าพร้อมลงใหม่ ===== */
 function addBillAndReset() {
     if (!addBill()) return;
 
-    // ล้างเลข + ราคา + ช่อง 1
-    numbersDisplay.value = "";
+    clearNumbers();
     topPrice.value = "";
     bottomPrice.value = "";
     inputNums.value = "";
@@ -236,13 +258,13 @@ function addBillAndReset() {
     inputNums.focus();
 }
 
-/* ==== ลบบิล ==== */
+/* ===== ลบบิล ===== */
 function delBill(i) {
     bills.splice(i, 1);
     renderBills();
 }
 
-/* ==== แสดงบิล ==== */
+/* ===== แสดงบิลทั้งหมด ===== */
 function renderBills() {
     let html     = "";
     let totalAll = 0;
@@ -268,7 +290,7 @@ function renderBills() {
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* ==== Tab: วิ่งเฉพาะ บน -> ล่าง -> เพิ่มบิล ==== */
+/* ===== Tab: วิ่งเฉพาะ บน -> ล่าง -> เพิ่มบิล ===== */
 document.addEventListener("keydown", function(e){
     if (e.key !== "Tab") return;
 
@@ -288,10 +310,10 @@ document.addEventListener("keydown", function(e){
     }
 });
 
-/* ==== สเปซบาร์ = กลับเลข "ทุกที่บนหน้านี้" ==== */
+/* ===== สเปซบาร์ = กลับเลขทุกที่บนหน้า ===== */
 document.addEventListener("keydown", function(e){
     if (e.code === "Space" || e.key === " ") {
-        e.preventDefault();   // กันไม่ให้พิมพ์ช่องว่างทุกที่
+        e.preventDefault();   // ไม่ให้เว้นวรรค
         reverseNumbers();     // กลับเลขทันที
     }
 });
