@@ -13,7 +13,7 @@
     }
     .box {
         width:100%;
-        max-width:500px;
+        max-width:550px;
         margin:auto;
         background:#fff;
         padding:20px;
@@ -26,7 +26,6 @@
         margin-bottom:20px;
     }
 
-    /* โหมด */
     .mode-row {
         display:flex;
         gap:10px;
@@ -45,7 +44,6 @@
         color:white;
     }
 
-    /* ช่อง input */
     input[type="text"] {
         width:100%;
         padding:12px;
@@ -54,7 +52,6 @@
         font-size:16px;
     }
 
-    /* ช่องแสดงเลข */
     .numbers-container {
         min-height:80px;
         padding:10px;
@@ -67,25 +64,17 @@
         margin-top:4px;
     }
 
-    .num-pill {
-        background:#1e6bff;
-        color:#fff;
+    .pill {
         padding:6px 10px;
         border-radius:8px;
         font-size:15px;
-        cursor:pointer;
+        font-weight:bold;
         border:none;
-    }
-
-    .num-pill-error {
-        background:#ff3b3b;
-        color:#fff;
-        padding:6px 10px;
-        border-radius:8px;
-        font-size:15px;
         cursor:pointer;
-        border:none;
+        color:white;
     }
+    .good { background:#1e6bff; }
+    .bad  { background:#ff3b3b; }
 
     .row { display:flex; gap:10px; margin:10px 0; }
 
@@ -110,7 +99,6 @@
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
-    /* BILL */
     .bill-box {
         margin-top:20px;
         background:#ffe7f8;
@@ -126,13 +114,6 @@
         justify-content:space-between;
         border:1px solid #ddd;
     }
-
-    .bill-left {
-        max-width:260px;
-        width:260px;
-        font-size:14px;
-    }
-
     .bill-nums {
         background:#f8f8f8;
         padding:8px;
@@ -143,22 +124,19 @@
         white-space:normal;
         word-break:break-word;
     }
-
     .bill-total {
         font-weight:bold;
-        margin-top:8px;
         color:#d7006a;
+        margin-top:8px;
     }
-
     .del-btn {
-        color:red;
-        font-size:20px;
+        font-size:22px;
         cursor:pointer;
+        color:red;
     }
-
     .total-all {
-        margin-top:20px;
         text-align:center;
+        margin-top:20px;
         font-size:22px;
         font-weight:bold;
     }
@@ -171,20 +149,17 @@
 
     <h2>หวย Simulator Demo</h2>
 
-    <!-- MODES -->
     <div class="mode-row">
         <button class="mode-btn active" id="btn2" onclick="switchMode('2')">2 ตัว</button>
         <button class="mode-btn" id="btn3" onclick="switchMode('3')">3 ตัว</button>
     </div>
 
-    <!-- INPUT -->
     <input id="inputNums" type="text" placeholder="เช่น 12 56 หรือ 640 405">
 
-    <!-- OUTPUT -->
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
-        <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
+        <button class="btn-rev" onclick="reverseNum()">กลับเลข</button>
         <button class="btn-clear" onclick="clearAll()">ล้างเลข</button>
     </div>
 
@@ -200,125 +175,114 @@
 
 </div>
 
-
 <script>
-let mode = "2";          // 2 or 3
-let nums = [];           // เลขดี
-let errors = [];         // เลขผิด
-let bills = [];
+let mode="2";          // 2 หรือ 3
+let good=[];           // เลขถูกต้อง (ฟ้า)
+let bad=[];            // เลขผิดปกติ (แดง)
+let bills=[];
 
 /* เปลี่ยนโหมด */
 function switchMode(m){
-    mode = m;
-    document.querySelectorAll(".mode-btn").forEach(btn=>btn.classList.remove("active"));
+    mode=m;
+    document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
     document.getElementById("btn"+m).classList.add("active");
     clearAll();
 }
 
-/* แสดงปุ่ม */
+/* แสดงเลข */
 function render(){
-    const c = document.getElementById("numbersContainer");
-    c.innerHTML = "";
+    const box=document.getElementById("numbersContainer");
+    box.innerHTML="";
 
-    nums.forEach((n,i)=>{
-        let b = document.createElement("button");
-        b.className="num-pill";
+    good.forEach((n,i)=>{
+        let b=document.createElement("button");
+        b.className="pill good";
         b.textContent=n;
-        b.onclick=()=>{ nums.splice(i,1); render(); };
-        c.appendChild(b);
+        b.onclick=()=>{ good.splice(i,1); render(); };
+        box.appendChild(b);
     });
 
-    errors.forEach((n,i)=>{
-        let b = document.createElement("button");
-        b.className="num-pill-error";
+    bad.forEach((n,i)=>{
+        let b=document.createElement("button");
+        b.className="pill bad";
         b.textContent=n;
-        b.onclick=()=>{ errors.splice(i,1); render(); };
-        c.appendChild(b);
+        b.onclick=()=>{ bad.splice(i,1); render(); };
+        box.appendChild(b);
     });
 }
 
-/* รับเลข */
+/* parser อัจฉริยะ */
 document.getElementById("inputNums").addEventListener("input",function(){
-    let raw = this.value.trim();
+    let raw=this.value.trim();
+    if(raw.length===0) return;
 
-    if(raw.includes(" ")){
-        raw.split(/\s+/).forEach(p=>{
-            let clean = p.replace(/\D/g,"");
+    // ดึงทุกตัวเลขจากข้อความ (รองรับ -, *, /, +, =, ---)
+    let found = raw.match(/\d+/g);
+
+    if(found){
+        found.forEach(num=>{
             if(mode==="2"){
-                if(clean.length===2) nums.push(clean);
-                else if(clean.length>0) errors.push(clean);
+                if(num.length===2) good.push(num);
+                else if(num.length>2){
+                    let parts=num.match(/\d{2}/g);
+                    if(parts) parts.forEach(p=>good.push(p));
+                } else bad.push(num);
             }
-            if(mode==="3"){
-                if(clean.length===3) nums.push(clean);
-                else if(clean.length>0) errors.push(clean);
+            else{
+                if(num.length===3) good.push(num);
+                else if(num.length>3){
+                    let parts=num.match(/\d{3}/g);
+                    if(parts) parts.forEach(p=>good.push(p));
+                } else bad.push(num);
             }
         });
-        this.value="";
-        render();
-        return;
     }
 
-    let clean = raw.replace(/\D/g,"");
-    let len = mode==="3"?3:2;
-    let arr=[];
-
-    while(clean.length>=len){
-        arr.push(clean.slice(0,len));
-        clean=clean.slice(len);
-    }
-
-    if(arr.length>0){
-        nums = nums.concat(arr);
-        render();
-    }
-
-    this.value=clean;
+    this.value="";
+    render();
 });
 
-/* กลับเลขเฉพาะเลขฟ้า */
-function reverseNumbers(){
-    if(nums.length===0) return;
+/* reverse เฉพาะฟ้า */
+function reverseNum(){
+    let out=[...good];
 
-    let out=[...nums];
-
-    nums.forEach(n=>{
+    good.forEach(n=>{
         if(mode==="2"){
             let r=n[1]+n[0];
             if(!out.includes(r)) out.push(r);
-        }
-        if(mode==="3"){
-            let a=n[0], b=n[1], c=n[2];
+        } else {
+            let a=n[0],b=n[1],c=n[2];
             let list=[a+b+c,a+c+b,b+a+c,b+c+a,c+a+b,c+b+a];
-            [...new Set(list)].forEach(p=>{ if(!out.includes(p)) out.push(p); });
+            list=[...new Set(list)];
+            list.forEach(p=>{ if(!out.includes(p)) out.push(p); });
         }
     });
 
-    nums = out;
+    good=out;
     render();
 }
 
 /* ล้าง */
 function clearAll(){
-    nums=[];
-    errors=[];
-    render();
-    inputNums.value="";
+    good=[];
+    bad=[];
+    document.getElementById("inputNums").value="";
     document.getElementById("top").value="";
     document.getElementById("bottom").value="";
-    inputNums.focus();
+    render();
 }
 
-/* เพิ่มบิลเฉพาะเลขฟ้า */
+/* เพิ่มบิล */
 function addBill(){
-    if(nums.length===0) return false;
+    if(good.length===0) return false;
 
-    let t = Number(document.getElementById("top").value||0);
-    let b = Number(document.getElementById("bottom").value||0);
-    let total = nums.length*(t+b);
+    let t=Number(document.getElementById("top").value||0);
+    let b=Number(document.getElementById("bottom").value||0);
+    let total = good.length*(t+b);
 
     bills.push({
         mode:mode,
-        nums:[...nums],
+        nums:[...good],
         top:t,
         bottom:b,
         total:total
@@ -347,9 +311,9 @@ function renderBills(){
     bills.forEach((b,i)=>{
         sum+=b.total;
 
-        html += `
+        html+=`
         <div class="bill">
-            <div class="bill-left">
+            <div>
                 <div><b>${b.mode==="2"?"2 ตัว":"3 ตัว"}</b></div>
                 <div>${b.top} × ${b.bottom}</div>
                 <div class="bill-nums">${b.nums.join(" ")}</div>
@@ -367,28 +331,17 @@ function renderBills(){
 document.addEventListener("keydown",function(e){
     if(e.key!=="Tab") return;
     e.preventDefault();
-
     let top=document.getElementById("top");
     let bottom=document.getElementById("bottom");
 
-    if(document.activeElement===top){
-        bottom.focus(); bottom.select();
-        return;
-    }
-    if(document.activeElement===bottom){
-        addBillAndReset();
-        return;
-    }
-
+    if(document.activeElement===top){ bottom.focus(); bottom.select(); return; }
+    if(document.activeElement===bottom){ addBillAndReset(); return; }
     top.focus(); top.select();
 });
 
 /* SPACE = กลับเลข */
 document.addEventListener("keydown",function(e){
-    if(e.code==="Space"){
-        e.preventDefault();
-        reverseNumbers();
-    }
+    if(e.code==="Space"){ e.preventDefault(); reverseNum(); }
 });
 </script>
 
