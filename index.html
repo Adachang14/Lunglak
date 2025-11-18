@@ -25,22 +25,42 @@
         color:#c449d5;
         margin-bottom:20px;
     }
+
+    /* โหมด */
+    .mode-row {
+        display:flex;
+        gap:10px;
+        margin-bottom:15px;
+    }
+    .mode-btn {
+        background:#ffe9a8;
+        border:none;
+        padding:10px 18px;
+        border-radius:8px;
+        cursor:pointer;
+        font-weight:bold;
+    }
+    .mode-btn.active {
+        background:#ffb700;
+        color:white;
+    }
+
+    /* ช่อง 1 */
     input[type="text"] {
         width:100%;
         padding:12px;
         border-radius:10px;
         border:1px solid #aaa;
         font-size:16px;
-        transition:0.2s;
         box-sizing:border-box;
+        transition:0.2s;
     }
-
-    /* ไฮไลต์ช่อง 1 เวลา ready */
     .highlight {
         box-shadow:0 0 10px #ff44c7;
         border-color:#ff44c7 !important;
     }
 
+    /* ช่อง 2 */
     .numbers-container {
         min-height:50px;
         padding:10px;
@@ -74,6 +94,7 @@
         box-sizing:border-box;
     }
 
+    /* ปุ่ม */
     button {
         padding:12px 16px;
         font-size:16px;
@@ -86,6 +107,7 @@
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
+    /* บิล */
     .bill-box {
         margin-top:20px;
         background:#ffe7f8;
@@ -127,8 +149,16 @@
 
     <h2>หวย Simulator Demo</h2>
 
+    <!-- ปุ่มโหมด -->
+    <div class="mode-row">
+        <button class="mode-btn active" id="btn2d" onclick="switchMode('2d')">2 ตัว</button>
+        <button class="mode-btn" id="btn3d" onclick="switchMode('3d')">3 ตัว</button>
+        <button class="mode-btn" id="btn19" onclick="switchMode('19')">19 ประตู</button>
+        <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
+    </div>
+
     <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
-    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710=20*20กลับบนลาว">
+    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
 
     <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
@@ -146,7 +176,6 @@
     <button id="btnAdd" class="btn-add" onclick="addBillAndReset()">+ เพิ่มบิล</button>
 
     <div class="bill-box" id="billList"></div>
-
     <div id="totalAll" class="total-all">รวมทั้งหมด: 0 บาท</div>
 
 </div>
@@ -155,27 +184,47 @@
 <script>
 let bills = [];
 let currentNums = [];
+let mode = "2d"; // 2d = 2 ตัว, 3d = 3 ตัว
 
 const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
 const topPrice = document.getElementById("top");
 const bottomPrice = document.getElementById("bottom");
 
-/* ===== Auto-select ช่องราคาเมื่อโฟกัส ===== */
-[topPrice, bottomPrice].forEach(el => {
-    el.addEventListener("focus", function(){
-        this.select();
-    });
-});
+/* ============================================================
+   โหมด
+   ============================================================ */
+function switchMode(m) {
+    mode = m;
 
-/* ===== ไฮไลต์ช่อง 1 ===== */
+    document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+    document.getElementById("btn2d").classList.toggle("active", m === "2d");
+    document.getElementById("btn3d").classList.toggle("active", m === "3d");
+    document.getElementById("btn19").classList.toggle("active", m === "19");
+    document.getElementById("btnRun").classList.toggle("active", m === "run");
+
+    clearNumbers();
+    highlightInput();
+
+    if (m === "3d") {
+        topPrice.placeholder = "ราคา บน";
+        bottomPrice.placeholder = "ราคา โต๊ด";
+    } else {
+        topPrice.placeholder = "ราคา บน";
+        bottomPrice.placeholder = "ราคา ล่าง";
+    }
+}
+
+/* ไฮไลต์ช่อง 1 */
 function highlightInput() {
     inputNums.classList.add("highlight");
     setTimeout(() => inputNums.classList.remove("highlight"), 200);
     inputNums.focus();
 }
 
-/* ===== แสดงเลขแบบ pill ===== */
+/* ============================================================
+   แสดงเลข pill
+   ============================================================ */
 function renderNumbers() {
     numbersContainer.innerHTML = "";
     currentNums.forEach((num, index) => {
@@ -190,15 +239,19 @@ function renderNumbers() {
     });
 }
 
-/* ===== จับเลข 2 หลัก ===== */
+/* ============================================================
+   รับเลขช่อง 1 → ตัด 2 หรือ 3 หลัก
+   ============================================================ */
 inputNums.addEventListener("input", function () {
     let raw = this.value;
-    let digits = raw.split("=")[0].replace(/\D/g, "");
-    let newNums = [];
+    let digits = raw.replace(/\D/g, "");
 
-    while (digits.length >= 2) {
-        newNums.push(digits.slice(0,2));
-        digits = digits.slice(2);
+    let chunk = mode === "3d" ? 3 : 2;
+
+    let newNums = [];
+    while (digits.length >= chunk) {
+        newNums.push(digits.slice(0, chunk));
+        digits = digits.slice(chunk);
     }
 
     if (newNums.length > 0) {
@@ -209,25 +262,51 @@ inputNums.addEventListener("input", function () {
     this.value = digits;
 });
 
-/* ===== กลับเลข ===== */
+/* ============================================================
+   กลับเลข
+   ============================================================ */
 function reverseNumbers() {
     if (currentNums.length === 0) return alert("ไม่มีเลขให้กลับ");
-    const reversed = currentNums.map(n => n[1] + n[0]);
+
+    let reversed = [];
+
+    if (mode === "2d") {
+        reversed = currentNums.map(n => n[1] + n[0]);
+    } 
+    else if (mode === "3d") {
+        currentNums.forEach(num => {
+            if (num.length === 3) {
+                const [a, b, c] = num;
+                reversed.push(a+b+c, a+c+b, b+a+c, b+c+a, c+a+b, c+b+a);
+            }
+        });
+    } 
+    else {
+        alert("โหมดนี้ยังไม่เปิดใช้งาน");
+        return;
+    }
+
     currentNums = currentNums.concat(reversed);
     renderNumbers();
 }
 
-/* ===== ล้างเลข + ล้างราคา + focus ช่อง 1 ===== */
+/* ============================================================
+   ล้างเลข
+   ============================================================ */
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
+
     topPrice.value = "";
     bottomPrice.value = "";
     inputNums.value = "";
+
     highlightInput();
 }
 
-/* ===== เพิ่มบิล ===== */
+/* ============================================================
+   เพิ่มบิล
+   ============================================================ */
 function addBill() {
     if (currentNums.length === 0) return false;
 
@@ -241,27 +320,32 @@ function addBill() {
         nums:[...currentNums],
         top:t,
         bottom:b,
-        total:total
+        total:total,
+        mode:mode
     });
 
     renderBills();
     return true;
 }
 
-/* ===== เพิ่มบิล + reset ===== */
+/* เพิ่มบิล + reset */
 function addBillAndReset() {
     if (!addBill()) return;
     clearNumbers();
     highlightInput();
 }
 
-/* ===== ลบบิล ===== */
+/* ============================================================
+   ลบบิล
+   ============================================================ */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/* ===== แสดงบิลทั้งหมด ===== */
+/* ============================================================
+   แสดงบิล
+   ============================================================ */
 function renderBills() {
     let html = "";
     let totalAll = 0;
@@ -272,9 +356,13 @@ function renderBills() {
         html += `
         <div class="bill">
             <div>
+                ${b.mode === "3d" ? "<b>[3 ตัว]</b>" : "<b>[2 ตัว]</b>"}<br>
                 ${b.nums.join(" ")}<br>
                 บน ${b.top} × ${b.nums.length} = ${b.top * b.nums.length}<br>
-                ล่าง ${b.bottom} × ${b.nums.length} = ${b.bottom * b.nums.length}<br>
+                ${b.mode === "3d"
+                    ? `โต๊ด ${b.bottom} × ${b.nums.length} = ${b.bottom * b.nums.length}`
+                    : `ล่าง ${b.bottom} × ${b.nums.length} = ${b.bottom * b.nums.length}`
+                }<br>
                 <b>รวมบิล: ${b.total} บาท</b>
             </div>
             <div class="del-btn" onclick="delBill(${i})">×</div>
@@ -283,14 +371,13 @@ function renderBills() {
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText = 
+    document.getElementById("totalAll").innerText =
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
-/* ===========================================================
-   ============  TAB FLOW ใหม่ (นิ่งสุด) =====================
-   บน → ล่าง → เพิ่มบิล
-   =========================================================== */
+/* ============================================================
+   TAB = บน → ล่าง → เพิ่มบิล
+   ============================================================ */
 document.addEventListener("keydown", function(e){
     if (e.key !== "Tab") return;
     e.preventDefault();
@@ -312,7 +399,7 @@ document.addEventListener("keydown", function(e){
     topPrice.select();
 });
 
-/* ===== Space = กลับเลข ===== */
+/* Space = กลับเลข */
 document.addEventListener("keydown", function(e){
     if (e.code === "Space") {
         e.preventDefault();
