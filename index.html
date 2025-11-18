@@ -1,4 +1,3 @@
-<!-- final stable version -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -53,6 +52,10 @@
         font-size:16px;
         transition:0.2s;
     }
+    .highlight {
+        box-shadow:0 0 10px #ff44c7;
+        border-color:#ff44c7 !important;
+    }
 
     .numbers-container {
         min-height:50px;
@@ -89,14 +92,29 @@
         border:1px solid:#ccc;
         font-size:16px;
     }
+    input[type="number"]:focus {
+        background:#fff7c9;
+        outline:none;
+    }
 
-    button { padding:12px 16px; font-size:16px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; }
-
+    button {
+        padding:12px 16px;
+        font-size:16px;
+        border-radius:10px;
+        border:none;
+        cursor:pointer;
+        font-weight:bold;
+    }
     .btn-rev  { background:#ffe06c; }
     .btn-clear{ background:#ffb3c1; }
     .btn-add  { background:#ff44c7; color:white; }
 
-    .bill-box { margin-top:20px; background:#ffe7f8; padding:15px; border-radius:15px; }
+    .bill-box {
+        margin-top:20px;
+        background:#ffe7f8;
+        padding:15px;
+        border-radius:15px;
+    }
 
     .bill {
         background:white;
@@ -105,12 +123,30 @@
         margin-bottom:15px;
         display:flex;
         justify-content:space-between;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
     }
 
-    .bill-left { width:85%; font-size:16px; }
+    .bill-left {
+        width:85%;
+        font-size:16px;
+    }
 
-    .bill-title { font-weight:bold; font-size:17px; margin-bottom:5px; color:#333; }
+    .bill-title {
+        font-weight:bold;
+        font-size:17px;
+        margin-bottom:5px;
+        color:#333;
+    }
+
+    .bill-price {
+        color:#777;
+        font-size:14px;
+    }
+
+    .bill-multiply {
+        font-weight:bold;
+        margin-bottom:8px;
+    }
 
     .bill-nums {
         background:#f8f8f8;
@@ -119,17 +155,40 @@
         border:1px solid #ddd;
         font-size:15px;
         margin-bottom:8px;
-        word-break:keep-all;
+        display:block;
         white-space:normal;
+        word-break:keep-all;
     }
 
-    .bill-line { white-space:nowrap; margin-bottom:4px; }
+    .bill-line {
+        white-space:nowrap;
+        margin-bottom:4px;
+    }
 
-    .bill-total { font-weight:bold; color:#d7006a; }
+    .bill-total {
+        font-weight:bold;
+        color:#d7006a;
+    }
 
-    .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; }
+    .del-btn {
+        font-size:22px;
+        color:red;
+        cursor:pointer;
+        user-select:none;
+    }
 
-    .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
+    .total-all {
+        text-align:center;
+        font-size:22px;
+        margin-top:20px;
+        font-weight:bold;
+    }
+
+    .label {
+        font-size:14px;
+        margin:5px 0 3px;
+        color:#555;
+    }
 </style>
 </head>
 
@@ -146,10 +205,10 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
     </div>
 
-    <div>ช่อง 1: พิมพ์หรือกอปเลข</div>
+    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
 
-    <div>ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
+    <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
@@ -170,9 +229,14 @@
 </div>
 
 <script>
+
 let bills = [];
 let currentNums = [];
 let mode = "2d";
+
+let isPaste = false;
+let buffer = "";
+let lastInputValue = "";
 
 const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
@@ -182,7 +246,7 @@ const bottomPrice = document.getElementById("bottom");
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-/* -------------------------------------------------- MODE -------------------------------------------------- */
+/* ----------------------- MODE ----------------------- */
 function switchMode(m){
     mode = m;
 
@@ -195,73 +259,128 @@ function switchMode(m){
     clearNumbers();
 
     inputNums.value = "";
+    buffer = "";
+    lastInputValue = "";
     inputNums.focus();
+    inputNums.select();
+    inputNums.classList.add("highlight");
+    setTimeout(()=> inputNums.classList.remove("highlight"), 200);
 }
 
-/* -------------------------------------------------- RENDER PILLS -------------------------------------------------- */
+/* ----------------------- RENDER PILL ----------------------- */
 function renderNumbers(){
     numbersContainer.innerHTML = "";
-    currentNums.forEach((obj,idx)=>{
+    currentNums.forEach((obj, idx)=>{
         const btn = document.createElement("button");
         btn.className = obj.error ? "num-pill error" : "num-pill";
         btn.textContent = obj.val;
+
         btn.onclick = ()=>{
             currentNums.splice(idx,1);
             renderNumbers();
         };
+
         numbersContainer.appendChild(btn);
     });
 }
 
-/* -------------------------------------------------- PASTE -------------------------------------------------- */
-inputNums.addEventListener("paste", e=>{
-    setTimeout(()=>{
-        let text = inputNums.value.replace(/[^0-9\s]/g," ");
-        let blocks = text.split(/\s+/).filter(x=>x.length>0);
+/* ----------------------- HANDLE PASTE ----------------------- */
+function handlePaste(text){
+    let clean = text.replace(/[^0-9\s]/g," ");
+    let blocks = clean.split(/\s+/).filter(x=>x.length>0);
 
-        blocks.forEach(token=>{
-            if(mode==="2d"){
-                if(token.length===2) currentNums.push({val:pad2(token), error:false});
-                else currentNums.push({val:token,error:true});
+    blocks.forEach(token=>{
+        if(mode === "2d"){
+            if(token.length === 2){
+                currentNums.push({val: pad2(token), error:false});
+            }else if(token.length === 1){
+                currentNums.push({val: token, error:true});
             }
-            if(mode==="3d"){
-                if(token.length===3) currentNums.push({val:pad3(token), error:false});
-                else currentNums.push({val:token,error:true});
-            }
-        });
+        }
 
+        if(mode === "3d"){
+            if(token.length === 3){
+                currentNums.push({val: pad3(token), error:false});
+            }else if(token.length <= 2){
+                currentNums.push({val: token, error:true});
+            }
+        }
+    });
+
+    renderNumbers();
+}
+
+/* ----------------------- HANDLE TYPING ----------------------- */
+function handleTyping(newDigits){
+    let created = 0;
+    buffer += newDigits;
+
+    if(mode==="2d"){
+        while(buffer.length>=2){
+            currentNums.push({val:pad2(buffer.slice(0,2)), error:false});
+            buffer = buffer.slice(2);
+            created++;
+        }
+    }
+
+    if(mode==="3d"){
+        while(buffer.length>=3){
+            currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
+            buffer = buffer.slice(3);
+            created++;
+        }
+    }
+
+    if(created>0){
         renderNumbers();
-        inputNums.value = "";
-    },10);
-});
+        setTimeout(()=>{
+            inputNums.value = "";
+            lastInputValue = "";
+        }, 300);
+    }
+}
 
-/* -------------------------------------------------- TYPING -------------------------------------------------- */
-inputNums.addEventListener("input", e=>{
+/* ----------------------- INPUT LISTENER ----------------------- */
+inputNums.addEventListener("paste", ()=>{ isPaste = true; });
+
+inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
-    let digits = v.replace(/\D/g,"");
 
-    if(mode==="2d" && digits.length===2){
-        currentNums.push({val:pad2(digits), error:false});
-        renderNumbers();
-        setTimeout(()=>{ inputNums.value=""; },150);
+    if(isPaste){
+        handlePaste(v);
+        buffer = "";
+        isPaste = false;
+        lastInputValue = "";
+        setTimeout(()=>{ inputNums.value = ""; }, 300);
+        return;
     }
 
-    if(mode==="3d" && digits.length===3){
-        currentNums.push({val:pad3(digits), error:false});
-        renderNumbers();
-        setTimeout(()=>{ inputNums.value=""; },150);
+    let prev = lastInputValue;
+    let prevDigits = prev.replace(/\D/g,"");
+    let newDigitsAll = v.replace(/\D/g,"");
+
+    lastInputValue = v;
+
+    if(newDigitsAll.length <= prevDigits.length){
+        return;
     }
+
+    let addedDigits = newDigitsAll.slice(prevDigits.length);
+
+    handleTyping(addedDigits);
 });
 
-/* -------------------------------------------------- REVERSE -------------------------------------------------- */
+/* ----------------------- REVERSE ----------------------- */
 function reverse3digit(num){
     const [a,b,c] = num.split("");
     if(a===b && b===c) return [num];
+
     let arr = [
         a+b+c, a+c+b,
         b+a+c, b+c+a,
         c+a+b, c+b+a
     ];
+
     return [...new Set(arr)];
 }
 
@@ -272,44 +391,53 @@ function reverseNumbers(){
         if(obj.error) return;
 
         if(mode==="2d"){
-            let a=obj.val[0], b=obj.val[1];
-            if(a===b) return;
-            let rev=pad2(b+a);
-            if(!currentNums.some(o=>o.val===rev)) add.push({val:rev,error:false});
+            const a = obj.val[0];
+            const b = obj.val[1];
+
+            if(a === b) return;
+
+            const rev = pad2(b + a);
+
+            if(!currentNums.some(o => !o.error && o.val === rev)){
+                add.push({val:rev, error:false});
+            }
         }
 
         if(mode==="3d"){
             reverse3digit(obj.val).forEach(x=>{
-                if(!currentNums.some(o=>o.val===x)) add.push({val:x,error:false});
+                if(!currentNums.some(o=>o.val===x)){
+                    add.push({val:x, error:false});
+                }
             });
         }
     });
 
-    currentNums=currentNums.concat(add);
+    currentNums = currentNums.concat(add);
     renderNumbers();
 }
 
-/* -------------------------------------------------- CLEAR -------------------------------------------------- */
+/* ----------------------- CLEAR ----------------------- */
 function clearNumbers(){
-    currentNums=[];
+    currentNums = [];
+    buffer = "";
     renderNumbers();
-    topPrice.value="";
-    bottomPrice.value="";
+    topPrice.value = "";
+    bottomPrice.value = "";
 }
 
-/* -------------------------------------------------- ADD BILL -------------------------------------------------- */
+/* ----------------------- BILL SYSTEM ----------------------- */
 function addBill(){
-    let valid=currentNums.filter(x=>{
+    let valid = currentNums.filter(x=>{
         if(x.error) return false;
-        if(mode==="2d" && x.val.length!==2) return false;
-        if(mode==="3d" && x.val.length!==3) return false;
+        if(mode === "2d" && x.val.length !== 2) return false;
+        if(mode === "3d" && x.val.length !== 3) return false;
         return true;
     }).map(x=>x.val);
 
-    if(valid.length===0) return;
+    if(valid.length===0) return false;
 
-    let t=Number(topPrice.value||0);
-    let b=Number(bottomPrice.value||0);
+    let t = Number(topPrice.value||0);
+    let b = Number(bottomPrice.value||0);
 
     bills.push({
         nums:valid,
@@ -320,52 +448,93 @@ function addBill(){
     });
 
     renderBills();
+    return true;
 }
 
 function addBillAndReset(){
-    addBill();
+    if(!addBill()) return;
     clearNumbers();
-    inputNums.value="";
+    inputNums.value = "";
+    lastInputValue = "";
+    buffer = "";
     inputNums.focus();
+    inputNums.select();
 }
 
-/* -------------------------------------------------- RENDER BILLS -------------------------------------------------- */
-function renderBills(){
-    let html="";
-    let total=0;
-
-    bills.forEach((b,i)=>{
-        total+=b.total;
-
-        let grouped=[];
-        for(let x=0;x<b.nums.length;x+=17){
-            grouped.push(b.nums.slice(x,x+17).join(" "));
-        }
-        let linesHTML=grouped.map(line=>`<div class="bill-line">${line}</div>`).join("");
-
-        html+=`
-        <div class="bill">
-            <div class="bill-left">
-                <div class="bill-title">${b.mode==="3d"?"3 ตัว":"2 ตัว"}</div>
-                <div class="bill-nums">${linesHTML}</div>
-                <div class="bill-total">รวมบิล: ${b.total} บาท</div>
-            </div>
-            <div class="del-btn" onclick="delBill(${i})">🗑</div>
-        </div>`;
-    });
-
-    document.getElementById("billList").innerHTML=html;
-    document.getElementById("totalAll").innerText=`รวมทั้งหมด: ${total} บาท`;
-}
-
-function delBill(i){
-    bills.splice(i,1);
+/* ----------------------- DELETE BILL ----------------------- */
+function delBill(index){
+    bills.splice(index,1);
     renderBills();
 }
 
-/* -------------------------------------------------- TOP/BOTTOM AUTO SELECT -------------------------------------------------- */
-[topPrice,bottomPrice].forEach(inp=>{
-    inp.addEventListener("focus",()=>inp.select());
+/* ----------------------- RENDER BILLS ----------------------- */
+function renderBills(){
+    let html = "";
+    let total = 0;
+
+    bills.forEach((b,i)=>{
+        total += b.total;
+
+        // FIX 3 ตัว แถวละ 17 ตัว
+        let grouped = [];
+        for(let x = 0; x < b.nums.length; x += 17){
+            grouped.push(b.nums.slice(x, x+17).join(" "));
+        }
+
+        let linesHTML = grouped.map(line => `<div class="bill-line">${line}</div>`).join("");
+
+        html += `
+        <div class="bill">
+            <div class="bill-left">
+                <div class="bill-title">${b.mode==="3d" ? "3 ตัว" : "2 ตัว"}</div>
+                <div class="bill-price">${b.mode==="3d" ? "บน × ล่าง × โต๊ด" : "บน × ล่าง"}</div>
+                <div class="bill-multiply">${b.top} × ${b.bottom}</div>
+
+                <div class="bill-nums">
+                    ${linesHTML}
+                </div>
+
+                <div class="bill-total">รวมบิล: ${b.total} บาท</div>
+            </div>
+            <div class="del-btn" onclick="delBill(${i})">🗑</div>
+        </div>
+        `;
+    });
+
+    document.getElementById("billList").innerHTML = html;
+    document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${total} บาท`;
+}
+
+/* ----------------------- TAB CONTROL (คืนระบบเก่า) ----------------------- */
+document.addEventListener("keydown", function(e) {
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+
+    if (document.activeElement === inputNums) {
+        topPrice.focus(); topPrice.select();
+        return;
+    }
+
+    if (document.activeElement === topPrice) {
+        bottomPrice.focus(); bottomPrice.select();
+        return;
+    }
+
+    if (document.activeElement === bottomPrice) {
+        addBillAndReset();
+        return;
+    }
+
+    inputNums.focus();
+    inputNums.select();
+});
+
+/* ----------------------- SPACE = REVERSE ----------------------- */
+document.addEventListener("keydown",(e)=>{
+    if(e.code==="Space"){
+        e.preventDefault();
+        reverseNumbers();
+    }
 });
 </script>
 </body>
