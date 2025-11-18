@@ -31,11 +31,11 @@
         border-radius:10px;
         border:1px solid #aaa;
         font-size:16px;
-        box-sizing:border-box;
         transition:0.2s;
+        box-sizing:border-box;
     }
 
-    /* ไฮไลต์แบบเด้งตอน focus อัตโนมัติ */
+    /* ไฮไลต์ช่อง 1 เวลา ready */
     .highlight {
         box-shadow:0 0 10px #ff44c7;
         border-color:#ff44c7 !important;
@@ -62,6 +62,7 @@
         border:none;
         cursor:pointer;
     }
+
     .row { display:flex; gap:10px; margin:10px 0; }
 
     input[type="number"] {
@@ -129,7 +130,7 @@
     <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
     <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 30343710=20*20กลับบนลาว">
 
-    <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัวได้)</div>
+    <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
@@ -155,19 +156,19 @@
 let bills = [];
 let currentNums = [];
 
-const inputNums        = document.getElementById("inputNums");
+const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
-const topPrice         = document.getElementById("top");
-const bottomPrice      = document.getElementById("bottom");
+const topPrice = document.getElementById("top");
+const bottomPrice = document.getElementById("bottom");
 
 /* ===== Auto-select ช่องราคาเมื่อโฟกัส ===== */
 [topPrice, bottomPrice].forEach(el => {
-    el.addEventListener("focus", function() {
+    el.addEventListener("focus", function(){
         this.select();
     });
 });
 
-/* ===== ไฮไลต์ช่อง 1 เมื่อ ready ===== */
+/* ===== ไฮไลต์ช่อง 1 ===== */
 function highlightInput() {
     inputNums.classList.add("highlight");
     setTimeout(() => inputNums.classList.remove("highlight"), 200);
@@ -189,14 +190,14 @@ function renderNumbers() {
     });
 }
 
-/* ===== จับเลขทีละ 2 หลัก ===== */
+/* ===== จับเลข 2 หลัก ===== */
 inputNums.addEventListener("input", function () {
     let raw = this.value;
     let digits = raw.split("=")[0].replace(/\D/g, "");
     let newNums = [];
 
     while (digits.length >= 2) {
-        newNums.push(digits.slice(0, 2));
+        newNums.push(digits.slice(0,2));
         digits = digits.slice(2);
     }
 
@@ -220,11 +221,9 @@ function reverseNumbers() {
 function clearNumbers() {
     currentNums = [];
     renderNumbers();
-
     topPrice.value = "";
     bottomPrice.value = "";
     inputNums.value = "";
-
     highlightInput();
 }
 
@@ -236,20 +235,20 @@ function addBill() {
     const b = Number(bottomPrice.value || 0);
 
     const count = currentNums.length;
-    const sumBill = (count * t) + (count * b);
+    const total = (count * t) + (count * b);
 
     bills.push({
-        nums: [...currentNums],
-        top: t,
-        bottom: b,
-        total: sumBill
+        nums:[...currentNums],
+        top:t,
+        bottom:b,
+        total:total
     });
 
     renderBills();
     return true;
 }
 
-/* ===== เพิ่มบิล + ล้างทั้งหมด + focus ช่อง 1 ===== */
+/* ===== เพิ่มบิล + reset ===== */
 function addBillAndReset() {
     if (!addBill()) return;
     clearNumbers();
@@ -257,36 +256,61 @@ function addBillAndReset() {
 }
 
 /* ===== ลบบิล ===== */
-function delBill(i) {
-    bills.splice(i, 1);
+function delBill(i){
+    bills.splice(i,1);
     renderBills();
 }
 
-/* ===== แสดงบิล ===== */
+/* ===== แสดงบิลทั้งหมด ===== */
 function renderBills() {
     let html = "";
     let totalAll = 0;
 
-    bills.forEach((b, i) => {
+    bills.forEach((b,i)=>{
         totalAll += b.total;
 
         html += `
-            <div class="bill">
-                <div>
-                    ${b.nums.join(" ")}<br>
-                    บน ${b.top} × ${b.nums.length} = ${b.top * b.nums.length}<br>
-                    ล่าง ${b.bottom} × ${b.nums.length} = ${b.bottom * b.nums.length}<br>
-                    <b>รวมบิล: ${b.total} บาท</b>
-                </div>
-                <div class="del-btn" onclick="delBill(${i})">×</div>
+        <div class="bill">
+            <div>
+                ${b.nums.join(" ")}<br>
+                บน ${b.top} × ${b.nums.length} = ${b.top * b.nums.length}<br>
+                ล่าง ${b.bottom} × ${b.nums.length} = ${b.bottom * b.nums.length}<br>
+                <b>รวมบิล: ${b.total} บาท</b>
             </div>
+            <div class="del-btn" onclick="delBill(${i})">×</div>
+        </div>
         `;
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText =
+    document.getElementById("totalAll").innerText = 
         `รวมทั้งหมด: ${totalAll} บาท`;
 }
+
+/* ===========================================================
+   ============  TAB FLOW ใหม่ (นิ่งสุด) =====================
+   บน → ล่าง → เพิ่มบิล
+   =========================================================== */
+document.addEventListener("keydown", function(e){
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+
+    const active = document.activeElement;
+
+    if (active === topPrice) {
+        bottomPrice.focus();
+        bottomPrice.select();
+        return;
+    }
+
+    if (active === bottomPrice) {
+        addBillAndReset();
+        return;
+    }
+
+    topPrice.focus();
+    topPrice.select();
+});
 
 /* ===== Space = กลับเลข ===== */
 document.addEventListener("keydown", function(e){
