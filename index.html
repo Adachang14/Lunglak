@@ -25,23 +25,29 @@
         color:#c449d5;
         margin-bottom:20px;
     }
-    textarea {
+    textarea, input[type="text"] {
         width:100%;
-        height:110px;
         padding:12px;
         border-radius:10px;
         border:1px solid #aaa;
         font-size:16px;
-        resize:none;
+        box-sizing:border-box;
     }
-    input {
+    #numbersDisplay {
+        height:90px;
+        resize:none;
+        background:#fffafc;
+    }
+    .row { display:flex; gap:10px; margin:10px 0; }
+
+    input[type="number"] {
         width:100%;
         padding:12px;
         border-radius:10px;
         border:1px solid #ccc;
         font-size:16px;
+        box-sizing:border-box;
     }
-    .row { display:flex; gap:10px; margin:10px 0; }
 
     button {
         padding:12px 16px;
@@ -53,8 +59,10 @@
     }
     button:focus { outline: none !important; }
 
-    .btn-rev { background:#ffe06c; }
-    .btn-add { background:#ff44c7; color:white; }
+    .btn-move { background:#9be7ff; }
+    .btn-rev  { background:#ffe06c; }
+    .btn-clear{ background:#ffb3c1; }
+    .btn-add  { background:#ff44c7; color:white; }
 
     .bill-box {
         margin-top:20px;
@@ -82,6 +90,12 @@
         margin-top:20px;
         font-weight:bold;
     }
+
+    .label {
+        font-size:14px;
+        margin:5px 0 3px;
+        color:#555;
+    }
 </style>
 </head>
 
@@ -91,11 +105,20 @@
 
     <h2>หวย Simulator Demo</h2>
 
-    <!-- ช่องใส่เลข -->
-    <textarea id="numbers" placeholder="ใส่เลข เช่น 46 64 69 96"></textarea>
+    <!-- ช่อง 1: ช่องกรอกเลข -->
+    <div class="label">ช่อง 1: ใส่เลข (พิมพ์หรือกอปวาง แล้วกด Enter หรือปุ่ม “ส่งไปช่องผลลัพธ์”)</div>
+    <input id="inputNums" type="text" placeholder="เช่น 23 14 97 หรือ 23,14,97">
 
-    <!-- ปุ่มกลับเลข (สำรอง กดเมาส์ได้ด้วย) -->
-    <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
+    <button class="btn-move" onclick="moveToDisplay()">ส่งไปช่องผลลัพธ์</button>
+
+    <!-- ช่อง 2: แสดงเลขสำหรับคำนวณ -->
+    <div class="label">ช่อง 2: เลขสำหรับคำนวณ (ผลลัพธ์ที่ใช้กลับเลข / ใส่ราคา)</div>
+    <textarea id="numbersDisplay" readonly placeholder="เลขจะมาแสดงที่นี่ เช่น 23 14 97"></textarea>
+
+    <div class="row">
+        <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
+        <button class="btn-clear" onclick="clearNumbers()">ล้างเลข</button>
+    </div>
 
     <!-- ราคาบน ล่าง -->
     <div class="row">
@@ -116,76 +139,84 @@
 
 
 <script>
-
 let bills = [];
 
-/* อ่านเฉพาะเลข 2 หลัก */
+// ดึงเฉพาะเลข 2 หลักจากข้อความ
 function extractNumbers(text) {
     return text.match(/\b\d{2}\b/g) || [];
 }
 
-/* ล้างข้อความขยะตอนวาง (paste) เท่านั้น */
-const numbersEl = document.getElementById("numbers");
+/* ========= ช่อง 1: กด Enter เพื่อย้ายลงช่อง 2 ========= */
+const inputNums   = document.getElementById("inputNums");
+const numbersArea = document.getElementById("numbersDisplay");
 
-numbersEl.addEventListener("paste", function(e){
-    setTimeout(() => {
-        const raw = this.value;
-        const clean = extractNumbers(raw).join(" ");
-        this.value = clean;
-    }, 10);
-});
-
-/* กดสเปซบาร์ = สั่งกลับเลข */
-numbersEl.addEventListener("keydown", function(e){
-    if (e.code === "Space" || e.key === " ") {
-        e.preventDefault();      // ไม่ให้ใส่ช่องว่างเพิ่ม
-        reverseNumbers();        // เรียกฟังก์ชันกลับเลขแทน
+inputNums.addEventListener("keydown", function(e){
+    if (e.key === "Enter") {
+        e.preventDefault();
+        moveToDisplay();
     }
 });
 
-/* กลับเลข (ใช้ได้ทั้งกดปุ่ม + สเปซบาร์) */
-function reverseNumbers() {
-    const raw = numbersEl.value;
+/* ========= ย้ายเลขจากช่อง 1 ไปช่อง 2 ========= */
+function moveToDisplay() {
+    const raw = inputNums.value;
+    const nums = extractNumbers(raw);
 
-    // ดึงเฉพาะเลข 2 หลัก (ตัดขยะ เช่น =20*20กลับบนลาว ฯลฯ)
-    const arr = extractNumbers(raw);
-
-    if (arr.length === 0) {
-        alert("ไม่มีเลขให้กลับ");
+    if (nums.length === 0) {
+        alert("ไม่พบเลข 2 หลักในช่อง 1");
         return;
     }
 
-    // กลับเลขทุกตัวแบบเพิ่มซ้ำ
-    const reversed = [];
-    arr.forEach(num => {
-        reversed.push(num[1] + num[0]);
-    });
-
-    // แสดงเลขเดิม + เลขกลับต่อท้าย
-    numbersEl.value = arr.join(" ") + " " + reversed.join(" ");
+    // แสดงเลขในช่อง 2 แทน แล้วล้างช่อง 1
+    numbersArea.value = nums.join(" ");
+    inputNums.value = "";
 }
 
-/* เพิ่มบิล */
-function addBill() {
-    const raw = numbersEl.value;
-    const arr = extractNumbers(raw);
+/* ========= กลับเลขในช่อง 2 ========= */
+function reverseNumbers() {
+    const raw = numbersArea.value;
+    const nums = extractNumbers(raw);
 
-    if (arr.length === 0) {
-        alert("ไม่พบเลข 2 หลัก");
+    if (nums.length === 0) {
+        alert("ไม่มีเลขในช่อง 2 ให้กลับ");
+        return;
+    }
+
+    const reversed = [];
+    nums.forEach(num => {
+        if (num.length === 2) {
+            reversed.push(num[1] + num[0]);
+        }
+    });
+
+    numbersArea.value = nums.join(" ") + " " + reversed.join(" ");
+}
+
+/* ========= ล้างเลขในช่อง 2 ========= */
+function clearNumbers() {
+    numbersArea.value = "";
+}
+
+/* ========= เพิ่มบิลจากช่อง 2 ========= */
+function addBill() {
+    const raw = numbersArea.value;
+    const nums = extractNumbers(raw);
+
+    if (nums.length === 0) {
+        alert("ยังไม่มีเลขในช่อง 2");
         return;
     }
 
     const t = Number(document.getElementById("top").value || 0);
     const b = Number(document.getElementById("bottom").value || 0);
 
-    const count = arr.length;
-
+    const count = nums.length;
     const sumTop = count * t;
     const sumBottom = count * b;
     const sumBill = sumTop + sumBottom;
 
     bills.push({
-        nums: arr,
+        nums,
         top: t,
         bottom: b,
         total: sumBill
@@ -194,13 +225,13 @@ function addBill() {
     renderBills();
 }
 
-/* ลบบิล */
+/* ========= ลบบิล ========= */
 function delBill(i) {
     bills.splice(i,1);
     renderBills();
 }
 
-/* แสดงบิลทั้งหมด */
+/* ========= แสดงบิลทั้งหมด ========= */
 function renderBills() {
     let html = "";
     let totalAll = 0;
@@ -225,6 +256,16 @@ function renderBills() {
     document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${totalAll} บาท`;
 }
 
+/* ========= คีย์ลัด: สเปซบาร์ = กลับเลข (ถ้าไม่ได้โฟกัสช่อง 1) ========= */
+document.addEventListener("keydown", function(e){
+    const tag = document.activeElement.tagName;
+    const isTyping = (tag === "INPUT" || tag === "TEXTAREA");
+
+    if ((e.code === "Space" || e.key === " ") && !isTyping) {
+        e.preventDefault();
+        reverseNumbers();
+    }
+});
 </script>
 
 </body>
