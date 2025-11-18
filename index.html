@@ -89,7 +89,7 @@
         width:100%;
         padding:12px;
         border-radius:10px;
-        border:1px solid #ccc;
+        border:1px solid:#ccc;
         font-size:16px;
     }
 
@@ -225,6 +225,7 @@ let mode = "2d";
 
 let isPaste = false;
 let buffer = "";
+let lastInputValue = ""; // ใช้จำค่าก่อนหน้าเพื่อรู้ว่ามีตัวใหม่เพิ่มอะไรเข้ามา
 
 const inputNums = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
@@ -249,6 +250,7 @@ function switchMode(m){
     // เคลียร์ช่อง 1 แล้วโฟกัส + ไฮไลต์ พร้อมวาง / พิมเลขทันที
     inputNums.value = "";
     buffer = "";
+    lastInputValue = "";
     inputNums.focus();
     inputNums.select();
     inputNums.classList.add("highlight");
@@ -303,13 +305,16 @@ function handlePaste(text){
 }
 
 /* ----------------------- HANDLE TYPING ----------------------- */
-function handleTyping(v){
-    buffer += v.replace(/\D/g,"");
+// ใช้เฉพาะ "ตัวเลขใหม่ที่เพิ่งเพิ่มเข้ามา" เท่านั้น
+function handleTyping(newDigits){
+    let created = 0;
+    buffer += newDigits;
 
     if(mode==="2d"){
         while(buffer.length>=2){
             currentNums.push({val:pad2(buffer.slice(0,2)), error:false});
             buffer = buffer.slice(2);
+            created++;
         }
     }
 
@@ -317,10 +322,14 @@ function handleTyping(v){
         while(buffer.length>=3){
             currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
             buffer = buffer.slice(3);
+            created++;
         }
     }
 
-    renderNumbers();
+    if(created>0){
+        renderNumbers();
+    }
+    return created;
 }
 
 /* ----------------------- INPUT LISTENER + DELAY ----------------------- */
@@ -329,15 +338,41 @@ inputNums.addEventListener("paste", ()=>{ isPaste = true; });
 inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
 
-    // ดีเลย์ก่อนล้างช่อง 1
-    setTimeout(()=>{ inputNums.value = ""; }, 350);
-
     if(isPaste){
+        // โหมดวางทีละยาว
         handlePaste(v);
         buffer = "";
         isPaste = false;
-    } else {
-        handleTyping(v);
+        lastInputValue = "";
+        setTimeout(()=>{ inputNums.value = ""; }, 350);
+        return;
+    }
+
+    // โหมดพิมทีละตัว: หา "ตัวเลขที่เพิ่งเพิ่มมา"
+    let prev = lastInputValue;
+    let prevDigits = prev.replace(/\D/g,"");
+    let newDigitsAll = v.replace(/\D/g,"");
+
+    // อัปเดตค่าไว้ใช้รอบหน้า
+    lastInputValue = v;
+
+    // ถ้าความยาวเลขใหม่ <= เดิม แปลว่าลบ/แก้ในช่อง → รีเซ็ต buffer ทิ้ง ป้องกันบั๊ก
+    if(newDigitsAll.length <= prevDigits.length){
+        buffer = "";
+        return;
+    }
+
+    // ส่วนที่เพิ่มเข้ามาเท่านั้น
+    let addedDigits = newDigitsAll.slice(prevDigits.length);
+
+    let created = handleTyping(addedDigits);
+
+    // ถ้ามีเลขครบชุดถูกดึงไปเป็น pill แล้ว ค่อยเคลียร์ช่อง 1
+    if(created > 0){
+        setTimeout(()=>{
+            inputNums.value = "";
+            lastInputValue = "";
+        }, 350);
     }
 });
 
@@ -365,12 +400,12 @@ function reverseNumbers(){
             const a = obj.val[0];
             const b = obj.val[1];
 
-            // ถ้าเป็นเลขเบิ้ล (11, 22, ... 99) ไม่ต้องกลับ
+            // เลขเบิ้ล (11,22,...,99) ไม่กลับ
             if(a === b) return;
 
             const rev = pad2(b + a);
 
-            // กันเลขซ้ำ (เช่น มี 21 อยู่แล้ว กดกลับจาก 12 จะไม่เพิ่มซ้ำ)
+            // กันเลขซ้ำ
             if(!currentNums.some(o => !o.error && o.val === rev)){
                 add.push({val:rev, error:false});
             }
@@ -392,10 +427,10 @@ function reverseNumbers(){
 /* ----------------------- CLEAR ----------------------- */
 function clearNumbers(){
     currentNums = [];
-    buffer="";
+    buffer = "";
     renderNumbers();
-    topPrice.value="";
-    bottomPrice.value="";
+    topPrice.value = "";
+    bottomPrice.value = "";
 }
 
 /* ----------------------- BILL SYSTEM ----------------------- */
@@ -421,6 +456,9 @@ function addBill(){
 function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
+    inputNums.value = "";
+    lastInputValue = "";
+    buffer = "";
     inputNums.focus();
     inputNums.select();
 }
@@ -431,8 +469,8 @@ function delBill(index){
 }
 
 function renderBills(){
-    let html="";
-    let total=0;
+    let html = "";
+    let total = 0;
 
     bills.forEach((b,i)=>{
         total += b.total;
