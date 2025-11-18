@@ -245,6 +245,14 @@ function switchMode(m){
     document.getElementById("btnRun").classList.toggle("active", m==="run");
 
     clearNumbers();
+
+    // เคลียร์ช่อง 1 แล้วโฟกัส + ไฮไลต์ พร้อมวาง / พิมเลขทันที
+    inputNums.value = "";
+    buffer = "";
+    inputNums.focus();
+    inputNums.select();
+    inputNums.classList.add("highlight");
+    setTimeout(()=> inputNums.classList.remove("highlight"), 200);
 }
 
 /* ----------------------- RENDER ----------------------- */
@@ -354,7 +362,18 @@ function reverseNumbers(){
         if(obj.error) return;
 
         if(mode==="2d"){
-            add.push({val:pad2(obj.val[1]+obj.val[0]), error:false});
+            const a = obj.val[0];
+            const b = obj.val[1];
+
+            // ถ้าเป็นเลขเบิ้ล (11, 22, ... 99) ไม่ต้องกลับ
+            if(a === b) return;
+
+            const rev = pad2(b + a);
+
+            // กันเลขซ้ำ (เช่น มี 21 อยู่แล้ว กดกลับจาก 12 จะไม่เพิ่มซ้ำ)
+            if(!currentNums.some(o => !o.error && o.val === rev)){
+                add.push({val:rev, error:false});
+            }
         }
 
         if(mode==="3d"){
@@ -403,6 +422,7 @@ function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
     inputNums.focus();
+    inputNums.select();
 }
 
 function delBill(index){
@@ -460,6 +480,7 @@ document.addEventListener("keydown", function(e) {
 
     // หากไม่ใช่ 3 จุดด้านบน → กลับไปช่องเลข
     inputNums.focus();
+    inputNums.select();
 });
 
 /* ----------------------- SPACE = REVERSE ----------------------- */
