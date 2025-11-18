@@ -321,32 +321,42 @@ function reverse3digit(num) {
     ];
 }
 
-/* ----------------------- กลับเลขหลัก ----------------------- */
+/* ----------------------- กลับเลขหลัก (แก้ใหม่) ----------------------- */
 function reverseNumbers() {
     if (currentNums.length === 0) {
         alert("ไม่มีเลขให้กลับ");
         return;
     }
 
-    let result = [];
+    // โหมด 2 ตัว: เพิ่มเลขกลับต่อท้ายแบบตรง ๆ ตามลำดับ
+    if (mode === "2d") {
+        const reversed = currentNums.map(num => pad2(num[1] + num[0]));
+        // ต่อท้าย ไม่ sort ไม่ลบซ้ำ
+        currentNums = currentNums.concat(reversed);
+        renderNumbers();
+        return;
+    }
 
-    currentNums.forEach(num => {
-        if (mode === "2d") {
-            result.push(pad2(num[1] + num[0]));
-        }
+    // โหมด 3 ตัว: เพิ่มเฉพาะเลขกลับที่ยังไม่มี ต่อท้าย
+    if (mode === "3d") {
+        let toAdd = [];
 
-        if (mode === "3d") {
-            let arr = reverse3digit(num).map(pad3);
-            result.push(...arr);
-        }
-    });
+        currentNums.forEach(num => {
+            const perms = reverse3digit(num).map(pad3);
+            perms.forEach(p => {
+                // ถ้ายังไม่มีใน currentNums และยังไม่อยู่ในชุดจะเพิ่ม
+                if (!currentNums.includes(p) && !toAdd.includes(p)) {
+                    toAdd.push(p);
+                }
+            });
+        });
 
-    let all = [...currentNums, ...result];
-    all = all.map(n => mode === "3d" ? pad3(n) : pad2(n));
+        currentNums = currentNums.concat(toAdd);
+        renderNumbers();
+        return;
+    }
 
-    currentNums = [...new Set(all)];
-    currentNums.sort();
-    renderNumbers();
+    // โหมดอื่น (19 ประตู / เลขวิ่ง) ยังไม่รองรับการกลับเลข
 }
 
 /* ----------------------- ล้าง ----------------------- */
