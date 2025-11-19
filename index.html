@@ -51,7 +51,6 @@
         border-radius:10px;
         border:1px solid:#aaa;
         font-size:16px;
-        transition:0.2s;
     }
 
     .numbers-container {
@@ -82,11 +81,7 @@
         color:white;
     }
 
-    .row { 
-        display:flex; 
-        gap:10px; 
-        margin:10px 0; 
-    }
+    .row { display:flex; gap:10px; margin:10px 0; }
 
     input[type="number"] {
         width:100%;
@@ -125,25 +120,11 @@
     .bill-title {
         font-weight:bold;
         margin-bottom:5px;
-        text-align:left;
     }
 
-    .bill-price {
-        font-weight:bold;
-        color:#333;
-        margin-bottom:5px;
-    }
-
-    .bill-line {
-        white-space:nowrap;
-        margin-bottom:4px;
-        display:block;
-    }
-
-    .bill-total {
-        font-weight:bold;
-        color:#d7006a;
-    }
+    .bill-price { font-weight:bold; margin-bottom:5px; }
+    .bill-line  { white-space:nowrap; margin-bottom:4px; display:block; }
+    .bill-total { font-weight:bold; color:#d7006a; }
 
     .del-btn {
         font-size:22px;
@@ -174,19 +155,16 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">วิ่ง</button>
     </div>
 
-    <!-- โหมด 2/3 ตัว -->
     <div id="zoneMain">
         <div class="label">ช่อง 1 (2/3 ตัว)</div>
         <input id="inputMain" type="text">
     </div>
 
-    <!-- รูด -->
     <div id="zoneRood" style="display:none;">
         <div class="label">รูด: พิมทีละตัว (ห้ามวาง)</div>
         <input id="inputRood" type="text" autocomplete="off">
     </div>
 
-    <!-- วิ่ง -->
     <div id="zoneRun" style="display:none;">
         <div class="label">วิ่ง: พิมทีละตัว (ห้ามวาง)</div>
         <input id="inputRun" type="text" autocomplete="off">
@@ -200,7 +178,6 @@
         <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
-    <!-- ราคา -->
     <div class="row">
         <input id="top" type="number" placeholder="ราคา บน">
         <input id="bottom" type="number" placeholder="ราคา ล่าง">
@@ -215,9 +192,9 @@
 </div>
 
 <script>
-/* ========================== PART 1 END ========================== */
+/* =========== PART 1 END =========== */
 /**********************************************************
- *   ตัวแปรหลัก + เตรียมระบบ
+ *   ตัวแปรหลัก
  **********************************************************/
 let bills = [];
 let currentNums = [];
@@ -251,18 +228,16 @@ function switchMode(m){
     document.getElementById("btn19").classList.toggle("active", m==="19");
     document.getElementById("btnRun").classList.toggle("active", m==="run");
 
-    // input toggle
     document.getElementById("zoneMain").style.display = (m==="2d"||m==="3d")?"block":"none";
     document.getElementById("zoneRood").style.display = m==="19"?"block":"none";
     document.getElementById("zoneRun").style.display  = m==="run"?"block":"none";
 
-    // โหมด 3 ตัว → มีราคาโต๊ด
     todPrice.style.display = m==="3d" ? "block" : "none";
 
-    // reset input
     inputMain.value="";
     inputRun.value="";
     inputRood.value="";
+
     topPrice.value="";
     bottomPrice.value="";
     todPrice.value="";
@@ -278,7 +253,7 @@ function switchMode(m){
 }
 
 /**********************************************************
- *   วาด pill
+ *   render pill
  **********************************************************/
 function renderNumbers(){
     numbersContainer.innerHTML="";
@@ -295,7 +270,7 @@ function renderNumbers(){
 }
 
 /**********************************************************
- *   พาสท์ input 2/3 ตัว
+ *   input 2/3 ตัว (พิมพ์ + วาง)
  **********************************************************/
 inputMain.addEventListener("paste",()=> isPaste=true);
 
@@ -346,7 +321,7 @@ inputMain.addEventListener("input",(e)=>{
 });
 
 /**********************************************************
- *   พาสท์ตัวเลขก้อนใหญ่
+ *   วางก้อนใหญ่ (paste)
  **********************************************************/
 function handlePaste(text){
     let clean = text.replace(/[^0-9\s]/g," ");
@@ -363,7 +338,7 @@ function handlePaste(text){
 }
 
 /**********************************************************
- *   โหมดวิ่ง — พิมตัวเดียว
+ *   โหมดวิ่ง — พิมทีละตัว
  **********************************************************/
 inputRun.addEventListener("paste",e=> e.preventDefault());
 
@@ -379,17 +354,17 @@ inputRun.addEventListener("input",(e)=>{
 });
 
 /**********************************************************
- *   สร้างรูด 19 ประตู
+ *   generate รูด 19 — เวอร์ชันแก้ครบ 38 ตัว
  **********************************************************/
 function generate19(d){
     let out = [];
 
-    // ด้านหลัง เช่น 1 → x1 = 01 11 21 ... 91
+    // ด้านหลัง เช่น x1 → 01 11 21 ... 91
     for(let i=0;i<=9;i++){
         out.push(pad2(i + "" + d));
     }
 
-    // ด้านหน้า เช่น 1 → 1x = 10 12 13 ... 19
+    // ด้านหน้า เช่น 1x → 10 12 13 ... 19
     for(let i=0;i<=9;i++){
         out.push(pad2(d + "" + i));
     }
@@ -397,6 +372,9 @@ function generate19(d){
     return out;
 }
 
+/**********************************************************
+ *   รูด 19 — (แก้ปัญหาเลขหายด้วย reset ก่อน push)
+ **********************************************************/
 inputRood.addEventListener("paste", e => e.preventDefault());
 
 inputRood.addEventListener("input",(e)=>{
@@ -408,19 +386,20 @@ inputRood.addEventListener("input",(e)=>{
     let d=v[0];
     inputRood.value="";
 
+    // 💥 เคลียร์ก่อนเพื่อกันค้าง (Fix เลขหาย 02 / 20)
+    currentNums = [];
+
     let arr=generate19(d);
 
     arr.forEach(n=>{
-        if(!currentNums.some(x=>x.val===n)){
-            currentNums.push({val:n});
-        }
+        currentNums.push({val:n});
     });
 
     renderNumbers();
 });
 
 /**********************************************************
- *   reverse number — ปิดในโหมดรูด/วิ่ง
+ *   reverse — ปิดในโหมดรูด / วิ่ง
  **********************************************************/
 function reverseNumbers(){
     if(mode==="19" || mode==="run") return;
@@ -456,10 +435,10 @@ function reverseNumbers(){
 
     currentNums=currentNums.concat(add);
     renderNumbers();
-}
+});
 
 /**********************************************************
- *   ล้างเลข + ล้างบิล
+ *   ล้างตัวเลข + บิล
  **********************************************************/
 function clearNumbers(){
     currentNums=[];
@@ -477,35 +456,33 @@ function clearNumbersAndBills(){
     renderBills();
 }
 
+/* ========= PART 2 END ========= */
 /**********************************************************
- *   PART 2 END
- **********************************************************/
-/**********************************************************
- *   เพิ่มบิล (คิดเงิน)
+ *   เพิ่มบิล (คำนวณราคา)
  **********************************************************/
 function addBill(){
     let list=currentNums.map(x=>x.val);
     if(list.length===0) return false;
 
-    let t = Number(topPrice.value || 0);
-    let b = Number(bottomPrice.value || 0);
+    let t  = Number(topPrice.value || 0);
+    let b  = Number(bottomPrice.value || 0);
     let td = Number(todPrice.value || 0);
 
     let total = 0;
 
-    if(mode==="2d"){
+    if(mode === "2d"){
         total = list.length * (t + b);
     }
 
-    if(mode==="run"){
+    if(mode === "run"){
         total = list.length * (t + b);
     }
 
-    if(mode==="19"){
+    if(mode === "19"){
         total = list.length * (t + b);
     }
 
-    if(mode==="3d"){
+    if(mode === "3d"){
         // 3 ตัว = บน + โต๊ด (ล่าง = 0)
         b = 0;
         total = list.length * (t + td);
@@ -525,7 +502,7 @@ function addBill(){
 }
 
 /**********************************************************
- *   เพิ่มบิล + ล้าง
+ *   เพิ่มบิลแล้วรีเซ็ต
  **********************************************************/
 function addBillAndReset(){
     if(!addBill()) return;
@@ -549,7 +526,7 @@ function delBill(i){
 }
 
 /**********************************************************
- *   วาดบิลทั้งหมด
+ *   แสดงบิลทั้งหมด
  **********************************************************/
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
@@ -587,14 +564,14 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        // ชื่อบิลถูกต้องตามโหมด
+        // ชื่อบิลถูกต้องที่สุด
         let title = "";
         if(b.mode==="2d") title = "2 ตัว";
         if(b.mode==="3d") title = "3 ตัว";
         if(b.mode==="19") title = "รูด 19";
         if(b.mode==="run") title = "วิ่ง";
 
-        // แสดงตัวคูณ (3 ตัว ใช้ บน × ล่าง × โต๊ด)
+        // แสดงราคา
         let priceLine = "";
         if(b.mode==="3d"){
             priceLine = `${b.top} × 0 × ${b.tod}`;
@@ -602,8 +579,10 @@ function renderBills(){
             priceLine = `${b.top} × ${b.bottom}`;
         }
 
-        let lines=groupByWidth(b.nums, b.mode==="3d" ? w : w*0.7)
-            .map(l=>`<div class="bill-line">${l}</div>`).join("");
+        let lines=groupByWidth(
+            b.nums,
+            b.mode==="3d" ? w : w*0.7
+        ).map(l=>`<div class="bill-line">${l}</div>`).join("");
 
         html+=`
         <div class="bill">
@@ -622,7 +601,7 @@ function renderBills(){
 }
 
 /**********************************************************
- *   ระบบ TAB — ราคา บน → ล่าง → โต๊ด → เพิ่มบิล
+ *   TAB — (อินพุต → บน → ล่าง/โต๊ด → เพิ่มบิล)
  **********************************************************/
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
@@ -630,12 +609,12 @@ document.addEventListener("keydown",(e)=>{
 
     let el=document.activeElement;
 
-    // input โหมดเลข → ราคา บน
+    // ช่องเลข → ราคา บน
     if(el===inputMain || el===inputRun || el===inputRood){
         topPrice.focus(); topPrice.select(); return;
     }
 
-    // จากราคา บน →
+    // ราคา บน →
     if(el===topPrice){
         if(mode==="3d"){
             todPrice.focus(); todPrice.select(); return;
@@ -644,13 +623,13 @@ document.addEventListener("keydown",(e)=>{
         }
     }
 
-    // จากราคา ล่าง → เพิ่มบิล
+    // ราคา ล่าง → เพิ่มบิล
     if(el===bottomPrice){
         addBillAndReset(); 
         return;
     }
 
-    // จากราคา โต๊ด → เพิ่มบิล
+    // ราคา โต๊ด → เพิ่มบิล
     if(el===todPrice){
         addBillAndReset();
         return;
@@ -668,7 +647,7 @@ document.addEventListener("keydown",(e)=>{
 });
 
 /**********************************************************
- *   ปิดไฟล์ HTML
+ *   END FILE
  **********************************************************/
 </script>
 
