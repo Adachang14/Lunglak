@@ -154,25 +154,21 @@
     <button class="mode-btn" id="btnWin" onclick="switchMode('win')">วิน</button>
 </div>
 
-<!-- โหมดปกติ -->
 <div id="zoneMain">
     <div class="label">ช่อง 1 (2/3 ตัว)</div>
     <input id="inputMain" type="text">
 </div>
 
-<!-- รูด -->
 <div id="zoneRood" style="display:none;">
     <div class="label">รูด: พิมทีละตัว (ห้ามวาง)</div>
     <input id="inputRood" type="text">
 </div>
 
-<!-- วิ่ง -->
 <div id="zoneRun" style="display:none;">
     <div class="label">วิ่ง: พิมทีละตัว (ห้ามวาง)</div>
     <input id="inputRun" type="text">
 </div>
 
-<!-- วิน -->
 <div id="zoneWin" style="display:none; margin-top:20px;">
     <div style="margin-bottom:10px;">
         <label><input type="radio" name="winMode" value="2" checked> จับวิน 2 ตัว</label>
@@ -197,25 +193,6 @@
 
 <div class="label">ช่อง 2: เลขล้วน</div>
 <div id="numbersContainer" class="numbers-container"></div>
-
-<div class="row">
-    <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
-    <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
-</div>
-
-<div class="row">
-    <input id="top" type="number" placeholder="ราคา บน">
-    <input id="bottom" type="number" placeholder="ราคา ล่าง">
-    <input id="tod" type="number" placeholder="ราคา โต๊ด" style="display:none;">
-</div>
-
-<button class="btn-add" onclick="addBillAndReset()">+ เพิ่มบิล</button>
-
-<div class="bill-box" id="billList"></div>
-<div id="totalAll" class="total-all">รวมทั้งหมด: 0 บาท</div>
-
-</div>
-
 <script>
 
 /* ==================== ตัวแปรหลัก ==================== */
@@ -383,7 +360,6 @@ inputRood.addEventListener("input",(e)=>{
 
     renderNumbers();
 });
-
 /* ==================== reverse 2/3 ตัว ==================== */
 function reverseNumbers(){
     if(mode==="run"||mode==="19"||mode==="win") return;
@@ -439,7 +415,7 @@ function initWinButtons(){
     addBtn(0);
 }
 
-/* ========== (เวอร์ชันใหม่) คำนวณวิน แบบไม่กลับเอง ========== */
+/* ==================== วิน (ถูกต้อง ไม่กลับเอง) ==================== */
 function winCalculate(){
     if(winSelected.length < 2){
         alert("เลือกเลขอย่างน้อย 2 ตัว");
@@ -456,17 +432,16 @@ function winCalculate(){
             for(let j=0;j<winSelected.length;j++){
 
                 if(dup){
-                    // รวมเบิ้ล แต่ไม่กลับเอง → i <= j
+                    // รวมเบิ้ล แต่ไม่กลับเองเอง → i <= j
                     if(i <= j){
                         out.push(winSelected[i] + winSelected[j]);
                     }
                 }else{
-                    // ไม่รวมเบิ้ล → i < j อย่างเดียว
+                    // ไม่รวมเบิ้ล → i < j
                     if(i < j){
                         out.push(winSelected[i] + winSelected[j]);
                     }
                 }
-
             }
         }
     }
@@ -478,7 +453,7 @@ function winCalculate(){
                 for(let k=0;k<winSelected.length;k++){
 
                     if(dup){
-                        // รวมเบิ้ล แต่ไม่กลับเอง → i <= j <= k
+                        // รวมเบิ้ลแต่ไม่กลับเอง → i <= j <= k
                         if(i <= j && j <= k){
                             out.push(winSelected[i] + winSelected[j] + winSelected[k]);
                         }
@@ -488,7 +463,6 @@ function winCalculate(){
                             out.push(winSelected[i] + winSelected[j] + winSelected[k]);
                         }
                     }
-
                 }
             }
         }
@@ -498,42 +472,46 @@ function winCalculate(){
     renderNumbers();
 }
 
-/* ========== reverse วิน (ครบชุด) ========== */
+/* ==================== กลับวินแบบต่อท้าย (เวอร์ชันที่มึงต้องการ) ==================== */
 function winReverse(){
-
-    let final=[];
+    let add = [];
 
     currentNums.forEach(o=>{
-        let v=o.val;
-        let chars=v.split("");
+        let v = o.val;
 
-        let allSame = chars.every(ch => ch===chars[0]);
-        if(allSame){
-            final.push({val:v});
-            return;
-        }
-
-        function perm(arr){
-            if(arr.length===1) return [arr];
-            let r=[];
-            for(let i=0;i<arr.length;i++){
-                let rest=arr.slice(0,i).concat(arr.slice(i+1));
-                for(let p of perm(rest)){
-                    r.push([arr[i],...p]);
-                }
+        // ======= 2 ตัว =======
+        if(v.length === 2){
+            let r = v[1] + v[0];
+            if(r !== v &&
+               !currentNums.some(x=>x.val === r) &&
+               !add.some(x=>x.val === r)){
+                add.push({val:r});
             }
-            return r;
         }
 
-        let combos=[...new Set(perm(chars).map(a=>a.join("")))];
-        combos.forEach(c=> final.push({val:c}));
+        // ======= 3 ตัว =======
+        if(v.length === 3){
+            let a = v[0], b = v[1], c = v[2];
+            let combos = [
+                c+b+a,
+                b+c+a,
+                c+a+b,
+                b+a+c,
+                a+c+b
+            ];
+
+            combos.forEach(r=>{
+                if(r !== v &&
+                   !currentNums.some(x=>x.val === r) &&
+                   !add.some(x=>x.val === r)){
+                    add.push({val:r});
+                }
+            });
+        }
     });
 
-    currentNums=[];
-    final.forEach(x=>{
-        if(!currentNums.some(y=>y.val===x.val)) currentNums.push(x);
-    });
-
+    // ต่อท้าย (ไม่ reorder)
+    currentNums = currentNums.concat(add);
     renderNumbers();
 }
 
