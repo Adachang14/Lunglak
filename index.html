@@ -48,7 +48,7 @@
         width:100%;
         padding:12px;
         border-radius:10px;
-        border:1px solid #aaa;
+        border:1px solid:#aaa;
         font-size:16px;
     }
 
@@ -112,7 +112,7 @@
         margin-bottom:15px;
         display:flex;
         justify-content:space-between;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
     }
 
     .bill-left { width:85%; }
@@ -129,7 +129,7 @@
         background:#f8f8f8;
         padding:10px;
         border-radius:10px;
-        border:1px solid #ddd;
+        border:1px solid:#ddd;
         font-size:15px;
         margin-bottom:8px;
         white-space:normal;
@@ -244,6 +244,8 @@ function switchMode(m){
     inputNums.value = "";
     buffer = "";
     lastDigits = "";
+
+    inputNums.focus();
 }
 
 /* ---- Render pills ---- */
@@ -274,10 +276,13 @@ inputNums.addEventListener("paste",(e)=>{
 inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
 
-    /* ---- 19 ประตู ---- */
+    /* ---- 19 ประตู (ช่อง 1 ต้องล้างทันที) ---- */
     if(mode==="19"){
-        currentNums = [];
         let d = v.replace(/\D/g,"");
+
+        inputNums.value = ""; // ล้างช่อง 1 ทันที
+
+        currentNums = [];
 
         if(d.length>=1){
             let x = d[0];
@@ -286,31 +291,36 @@ inputNums.addEventListener("input",(e)=>{
             for(let i=0;i<10;i++) arr.push(x + i);
             for(let i=0;i<10;i++) arr.push(i + x);
 
-            arr = [...new Set(arr)]; // ลบตัวซ้ำ เช่น 11
-            currentNums = arr.map(n=>({val:n, error:false}));
+            arr = [...new Set(arr)];
+            currentNums = arr.map(n=>({val:n,error:false}));
         }
 
         renderNumbers();
         return;
     }
 
-    /* ---- วิ่ง ---- */
+    /* ---- วิ่ง (ช่อง 1 ต้องล้างทันที) ---- */
     if(mode==="run"){
-        currentNums = [];
         let d = v.replace(/\D/g,"");
+
+        inputNums.value = ""; // ล้างช่อง 1
+
+        currentNums = [];
         if(d.length>=1){
-            currentNums = [{val:d[0], error:false}];
+            currentNums = [{val:d[0],error:false}];
         }
+
         renderNumbers();
         return;
     }
 
-    /* ---- 2 ตัว / 3 ตัว (เหมือนเดิม) ---- */
+    /* ---- 2 ตัว / 3 ตัว (แบบเดิม + ล้างช่อง1หลังอ่าน buffer) ---- */
     let digits = v.replace(/\D/g,"");
 
     if(isPaste){
         let clean = v.replace(/[^0-9\s]/g," ");
         let tok = clean.split(/\s+/).filter(x=>x);
+
         tok.forEach(t=>{
             if(mode==="2d"){
                 if(t.length===2) currentNums.push({val:pad2(t), error:false});
@@ -322,8 +332,8 @@ inputNums.addEventListener("input",(e)=>{
             }
         });
 
+        inputNums.value = ""; // ล้างช่อง1 หลัง paste
         isPaste = false;
-        setTimeout(()=>inputNums.value="",100);
         renderNumbers();
         return;
     }
@@ -352,6 +362,7 @@ inputNums.addEventListener("input",(e)=>{
         }
     }
 
+    inputNums.value="";  // <--- ล้างช่อง 1 ทันทีหลังสร้างเลข
     renderNumbers();
 });
 
