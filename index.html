@@ -601,10 +601,10 @@ function renderBills(){
         total+=b.total;
 
         let title=
-            b.mode==="2d"?"2 ตัว บน x ล่าง":
-            b.mode==="3d"?"3 ตัว บน x โต๊ด":
-            b.mode==="run"?"วิ่ง บน x ล่าง":
-            b.mode==="19"?"รูด บน x ล่าง":"วินเลข";
+            b.mode==="2d"?"เลข 2 ตัว":
+            b.mode==="3d"?"เลข 3 ตัว ":
+            b.mode==="run"?"เลขวิ่ง":
+            b.mode==="19"?"เลขรูด":"เลขวิน";
 
         let priceLine=(b.mode==="3d")
             ?`${b.top} × 0 × ${b.tod}`
