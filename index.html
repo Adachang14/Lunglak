@@ -50,6 +50,7 @@
         border-radius:10px;
         border:1px solid:#aaa;
         font-size:16px;
+        transition:0.2s;
     }
 
     .numbers-container {
@@ -116,6 +117,11 @@
         font-size:16px;
     }
 
+    .bill-title {
+        font-weight:bold;
+        margin-bottom:5px;
+    }
+
     .bill-line {
         white-space:nowrap;
         margin-bottom:4px;
@@ -156,16 +162,19 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">วิ่ง</button>
     </div>
 
+    <!-- โหมด 2 ตัว / 3 ตัว -->
     <div id="zoneMain">
         <div class="label">ช่อง 1 (2/3 ตัว)</div>
         <input id="inputMain" type="text">
     </div>
 
+    <!-- โหมดรูด -->
     <div id="zoneRood" style="display:none;">
         <div class="label">รูด: พิมทีละตัว (ห้ามวาง)</div>
         <input id="inputRood" type="text" autocomplete="off">
     </div>
 
+    <!-- โหมดวิ่ง -->
     <div id="zoneRun" style="display:none;">
         <div class="label">วิ่ง: พิมทีละตัว (ห้ามวาง)</div>
         <input id="inputRun" type="text" autocomplete="off">
@@ -179,9 +188,11 @@
         <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
+    <!-- ราคาบน / ล่าง / โต๊ด (โต๊ดเฉพาะโหมด 3 ตัว) -->
     <div class="row">
         <input id="top" type="number" placeholder="ราคา บน">
         <input id="bottom" type="number" placeholder="ราคา ล่าง">
+        <input id="tod" type="number" placeholder="ราคา โต๊ด" style="display:none;">
     </div>
 
     <button id="btnAdd" class="btn-add" onclick="addBillAndReset()">+ เพิ่มบิล</button>
@@ -192,6 +203,7 @@
 </div>
 
 <script>
+/* ========================== PART 1 END ========================== */
 /* ============================================================ */
 let bills = [];
 let currentNums = [];
@@ -208,6 +220,7 @@ const inputRood = document.getElementById("inputRood");
 const numbersContainer = document.getElementById("numbersContainer");
 const topPrice = document.getElementById("top");
 const bottomPrice = document.getElementById("bottom");
+const todPrice = document.getElementById("tod");
 
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
@@ -216,45 +229,57 @@ const pad3 = n => n.toString().padStart(3,"0");
 function switchMode(m){
     mode = m;
 
+    // ปุ่ม active
     document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
     document.getElementById("btn2d").classList.toggle("active", m==="2d");
     document.getElementById("btn3d").classList.toggle("active", m==="3d");
     document.getElementById("btn19").classList.toggle("active", m==="19");
     document.getElementById("btnRun").classList.toggle("active", m==="run");
 
+    // แสดง input ตามโหมด
     document.getElementById("zoneMain").style.display = (m==="2d"||m==="3d")?"block":"none";
     document.getElementById("zoneRood").style.display = m==="19"?"block":"none";
     document.getElementById("zoneRun").style.display  = m==="run"?"block":"none";
 
+    // โหมด 3 ตัว → มี บน + โต๊ด
+    // โหมดอื่น → มี บน + ล่าง
+    if(m==="3d"){
+        bottomPrice.style.display = "none";
+        todPrice.style.display = "block";
+    } else {
+        bottomPrice.style.display = "block";
+        todPrice.style.display = "none";
+    }
+
+    // เคลียร์ค่า
     inputMain.value="";
     inputRun.value="";
     inputRood.value="";
-
     buffer="";
     lastDigits="";
+    clearNumbers();
 
+    // focus input
     if(m==="2d"||m==="3d") inputMain.focus();
     if(m==="19") inputRood.focus();
     if(m==="run") inputRun.focus();
 }
 
 /* ============================================================ */
+/* RENDER เลขล้วน */
 function renderNumbers(){
     numbersContainer.innerHTML="";
     currentNums.forEach((obj,idx)=>{
         let b=document.createElement("button");
         b.className="num-pill";
         b.textContent=obj.val;
-        b.onclick=()=>{
-            currentNums.splice(idx,1);
-            renderNumbers();
-        };
+        b.onclick=()=>{ currentNums.splice(idx,1); renderNumbers(); };
         numbersContainer.appendChild(b);
     });
 }
 
 /* ============================================================ */
-/* MAIN INPUT (2/3 ตัว) */
+/* INPUT 2 ตัว / 3 ตัว */
 inputMain.addEventListener("paste",()=> isPaste=true);
 
 inputMain.addEventListener("input",(e)=>{
@@ -305,14 +330,12 @@ inputMain.addEventListener("input",(e)=>{
 
 /* ============================================================ */
 function handlePaste(text){
-    let clean = text.replace(/[^0-9\s]/g," ");
-    let t = clean.split(/\s+/).filter(x=>x);
+    let clean=text.replace(/[^0-9\s]/g," ");
+    let t=clean.split(/\s+/).filter(x=>x);
 
     t.forEach(n=>{
-        if(mode==="2d" && n.length===2)
-            currentNums.push({val:pad2(n)});
-        if(mode==="3d" && n.length===3)
-            currentNums.push({val:pad3(n)});
+        if(mode==="2d" && n.length===2) currentNums.push({val:pad2(n)});
+        if(mode==="3d" && n.length===3) currentNums.push({val:pad3(n)});
     });
 
     renderNumbers();
@@ -334,18 +357,14 @@ inputRun.addEventListener("input",(e)=>{
 });
 
 /* ============================================================ */
-/* RUDE MODE — 19 ประตู */
+/* RUUD MODE (19 ประตู) */
 inputRood.addEventListener("paste", e => e.preventDefault());
 
 function generate19(d){
     let out=[];
 
-    for(let i=0;i<=9;i++){
-        out.push(pad2(String(i)+String(d)));
-    }
-    for(let i=0;i<=9;i++){
-        out.push(pad2(String(d)+String(i)));
-    }
+    for(let i=0;i<=9;i++) out.push(pad2(""+i+d));
+    for(let i=0;i<=9;i++) out.push(pad2(""+d+i));
 
     return out;
 }
@@ -371,8 +390,10 @@ inputRood.addEventListener("input",(e)=>{
 });
 
 /* ============================================================ */
-/* REVERSE */
+/* กลับเลข */
 function reverseNumbers(){
+    if(mode==="19" || mode==="run") return; // ไม่กลับในโหมดนี้
+
     let add=[];
 
     currentNums.forEach(obj=>{
@@ -382,8 +403,7 @@ function reverseNumbers(){
             let a=n[0],b=n[1];
             if(a!==b){
                 let r=pad2(b+a);
-                if(!currentNums.some(x=>x.val===r))
-                    add.push({val:r});
+                if(!currentNums.some(x=>x.val===r)) add.push({val:r});
             }
         }
 
@@ -394,10 +414,8 @@ function reverseNumbers(){
                 b+a+c, b+c+a,
                 c+a+b, c+b+a
             ];
-
             [...new Set(arr)].forEach(r=>{
-                if(!currentNums.some(x=>x.val===r))
-                    add.push({val:r});
+                if(!currentNums.some(x=>x.val===r)) add.push({val:r});
             });
         }
     });
@@ -411,9 +429,6 @@ function clearNumbers(){
     currentNums=[];
     buffer="";
     lastDigits="";
-    inputMain.value="";
-    inputRun.value="";
-    inputRood.value="";
     renderNumbers();
 }
 
@@ -423,20 +438,36 @@ function clearNumbersAndBills(){
     renderBills();
 }
 
+/* ========================== PART 2 END ========================== */
 /* ============================================================ */
 /* ADD BILL */
 function addBill(){
     let list=currentNums.map(x=>x.val);
     if(list.length===0) return false;
 
-    let t=Number(topPrice.value||0);
-    let b=Number(bottomPrice.value||0);
+    let t = Number(topPrice.value||0);
+    let b = Number(bottomPrice.value||0);
+    let td = Number(todPrice.value||0);
+
+    let total = 0;
+
+    if(mode==="3d"){
+        // 3 ตัว = บน + โต๊ด (ไม่มีล่าง)
+        total = list.length * (t + td);
+        b = 0; // ล่าง = 0 เสมอ
+    }
+    else{
+        // 2 ตัว / รูด / วิ่ง = บน + ล่าง
+        total = list.length * (t + b);
+        td = 0; // โต๊ด = 0 ในโหมดอื่น
+    }
 
     bills.push({
         nums:list,
         top:t,
         bottom:b,
-        total:list.length*(t+b),
+        tod:td,
+        total:total,
         mode:mode
     });
 
@@ -444,12 +475,14 @@ function addBill(){
     return true;
 }
 
+/* ============================================================ */
 function addBillAndReset(){
     if(!addBill()) return;
 
     clearNumbers();
     topPrice.value="";
     bottomPrice.value="";
+    todPrice.value="";
 
     if(mode==="2d"||mode==="3d") inputMain.focus();
     if(mode==="run") inputRun.focus();
@@ -463,7 +496,7 @@ function delBill(i){
 }
 
 /* ============================================================ */
-/* RENDER BILLS */
+/* แบ่งข้อความในบิล */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun', sans-serif";
@@ -491,24 +524,42 @@ function groupByWidth(nums,w){
     return lines;
 }
 
+/* ============================================================ */
+/* RENDER BILLS */
 function renderBills(){
     let html="";
     let total=0;
 
     let box=document.getElementById("billList");
-    let w=Math.max((box.clientWidth||0)-40,100);
+    let w=Math.max((box.clientWidth||0)-40,120);
 
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.7)
+        let lines=groupByWidth(b.nums, w)
             .map(l=>`<div class="bill-line">${l}</div>`).join("");
+
+        let title = "";
+        if(b.mode==="2d") title = "2 ตัว";
+        if(b.mode==="3d") title = "3 ตัว";
+        if(b.mode==="19") title = "รูด 19";
+        if(b.mode==="run") title = "วิ่ง";
+
+        let priceLine = "";
+        
+        if(b.mode==="3d"){
+            // 3 ตัว = บน × ล่าง × โต๊ด  (ล่าง = 0)
+            priceLine = `${b.top} × ${b.bottom} × ${b.tod}`;
+        } else {
+            // โหมดอื่น = บน × ล่าง
+            priceLine = `${b.top} × ${b.bottom}`;
+        }
 
         html+=`
         <div class="bill">
             <div class="bill-left">
-                <div class="bill-title">${b.mode==="3d"?"3 ตัว":(b.mode==="19"?"รูด 19":"2 ตัว / วิ่ง")}</div>
-                <div class="bill-price">${b.top} × ${b.bottom}</div>
+                <div class="bill-title">${title}</div>
+                <div class="bill-price">${priceLine}</div>
                 <div class="bill-nums">${lines}</div>
                 <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
@@ -521,7 +572,7 @@ function renderBills(){
 }
 
 /* ============================================================ */
-/* TAB SYSTEM (เวอร์ชันที่ใช้งานได้จริง 100%) */
+/* TAB SYSTEM */
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
     e.preventDefault();
@@ -529,15 +580,22 @@ document.addEventListener("keydown",(e)=>{
     let el=document.activeElement;
 
     if(el===inputMain || el===inputRun || el===inputRood){
-        topPrice.focus(); topPrice.select(); return;
+        topPrice.focus(); topPrice.select(); 
+        return;
     }
 
     if(el===topPrice){
-        bottomPrice.focus(); bottomPrice.select(); return;
+        if(mode==="3d"){
+            todPrice.focus(); todPrice.select();
+        } else {
+            bottomPrice.focus(); bottomPrice.select();
+        }
+        return;
     }
 
-    if(el===bottomPrice){
-        addBillAndReset(); return;
+    if(el===bottomPrice || el===todPrice){
+        addBillAndReset();
+        return;
     }
 });
 
