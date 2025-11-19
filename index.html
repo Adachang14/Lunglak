@@ -77,11 +77,6 @@
         cursor:pointer;
     }
 
-    .num-pill.error {
-        background:#ff3b3b;
-        color:white;
-    }
-
     .row { 
         display:flex; 
         gap:10px; 
@@ -117,50 +112,36 @@
         border:1px solid:#ddd;
     }
 
-    .bill-left {
-        width:85%;
-        font-size:16px;
-    }
+    .bill-title { font-weight:bold; margin-bottom:5px; }
+    .bill-price { font-weight:bold; color:#333; margin-bottom:5px; }
+    .bill-total { font-weight:bold; color:#d7006a; }
+    .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; }
+    .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
 
-    .bill-title {
+    /* ---------------- วินเลข ---------------- */
+    .win-grid {
+        display:grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap:8px;
+        margin-top:10px;
+    }
+    .win-btn {
+        background:#ffe9a8;
+        padding:15px 0;
+        border-radius:10px;
+        font-size:20px;
         font-weight:bold;
-        margin-bottom:5px;
-        text-align:left;
-    }
-
-    .bill-price {
-        font-weight:bold;
-        color:#333;
-        margin-bottom:5px;
-    }
-
-    .bill-line {
-        white-space:nowrap;
-        margin-bottom:4px;
-        display:block;
-    }
-
-    .bill-total {
-        font-weight:bold;
-        color:#d7006a;
-    }
-
-    .del-btn {
-        font-size:22px;
-        color:red;
-        cursor:pointer;
-        user-select:none;
-    }
-
-    .total-all {
         text-align:center;
-        font-size:22px;
-        margin-top:20px;
-        font-weight:bold;
+        cursor:pointer;
+        border:2px solid #f6c56e;
+    }
+    .win-btn.active {
+        background:#ffb700;
+        color:white;
+        border-color:#ff9800;
     }
 </style>
 </head>
-
 <body>
 
 <div class="box">
@@ -172,6 +153,7 @@
         <button class="mode-btn" id="btn3d" onclick="switchMode('3d')">3 ตัว</button>
         <button class="mode-btn" id="btn19" onclick="switchMode('19')">รูด 19</button>
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">วิ่ง</button>
+        <button class="mode-btn" id="btnWin" onclick="switchMode('win')">วิน</button>
     </div>
 
     <!-- โหมด 2/3 ตัว -->
@@ -190,6 +172,33 @@
     <div id="zoneRun" style="display:none;">
         <div class="label">วิ่ง: พิมทีละตัว (ห้ามวาง)</div>
         <input id="inputRun" type="text" autocomplete="off">
+    </div>
+
+    <!-- วินเลข -->
+    <div id="zoneWin" style="display:none; margin-top:20px;">
+
+        <div style="margin-bottom:10px;">
+            <label><input type="radio" name="winMode" value="2" checked> จับวิน 2 ตัว</label>
+            <label><input type="radio" name="winMode" value="3"> จับวิน 3 ตัว</label>
+        </div>
+
+        <div style="margin-bottom:15px;">
+            <label><input type="radio" name="winDup" value="no" checked> จับวินไม่รวมเลขเบิ้ล</label>
+            <label><input type="radio" name="winDup" value="yes"> จับวินรวมเลขเบิ้ล</label>
+        </div>
+
+        <div style="font-weight:bold; margin-bottom:10px;">
+            กรุณาเลือกตัวเลขที่ต้องการจับวิน 2 - 7 ตัวเลข
+        </div>
+
+        <div id="winDigits" class="win-grid"></div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-add" onclick="winCalculate()">คำนวณ</button>
+            <button class="btn-rev" onclick="winReverse()">กลับเลขวิน</button>
+            <button class="btn-clear" onclick="winClear()" style="background:#ff4c4c;color:white;">🗑 ยกเลิก</button>
+        </div>
+
     </div>
 
     <div class="label">ช่อง 2: เลขล้วน</div>
@@ -215,7 +224,6 @@
 </div>
 
 <script>
-/* ========================== PART 1 END ========================== */
 /**********************************************************
  *   ตัวแปรหลัก + เตรียมระบบ
  **********************************************************/
@@ -240,7 +248,7 @@ const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
 /**********************************************************
- *   เปลี่ยนโหมด
+ *   เปลี่ยนโหมด (ของเดิม)
  **********************************************************/
 function switchMode(m){
     mode = m;
@@ -250,16 +258,18 @@ function switchMode(m){
     document.getElementById("btn3d").classList.toggle("active", m==="3d");
     document.getElementById("btn19").classList.toggle("active", m==="19");
     document.getElementById("btnRun").classList.toggle("active", m==="run");
+    document.getElementById("btnWin").classList.toggle("active", m==="win");
 
-    // input toggle
+    // toggle zone
     document.getElementById("zoneMain").style.display = (m==="2d"||m==="3d")?"block":"none";
     document.getElementById("zoneRood").style.display = m==="19"?"block":"none";
     document.getElementById("zoneRun").style.display  = m==="run"?"block":"none";
+    document.getElementById("zoneWin").style.display  = m==="win"?"block":"none";
 
-    // โหมด 3 ตัว → มีราคาโต๊ด
+    // ราคาโต๊ดเฉพาะ 3 ตัว
     todPrice.style.display = m==="3d" ? "block" : "none";
 
-    // reset input
+    // reset
     inputMain.value="";
     inputRun.value="";
     inputRood.value="";
@@ -295,7 +305,7 @@ function renderNumbers(){
 }
 
 /**********************************************************
- *   พาสท์ input 2/3 ตัว
+ *   พิมพ์ 2/3 ตัว
  **********************************************************/
 inputMain.addEventListener("paste",()=> isPaste=true);
 
@@ -346,7 +356,7 @@ inputMain.addEventListener("input",(e)=>{
 });
 
 /**********************************************************
- *   พาสท์ตัวเลขก้อนใหญ่
+ *   พาสท์ก้อนตัวเลข
  **********************************************************/
 function handlePaste(text){
     let clean = text.replace(/[^0-9\s]/g," ");
@@ -379,19 +389,17 @@ inputRun.addEventListener("input",(e)=>{
 });
 
 /**********************************************************
- *   สร้างรูด 19 ประตู
+ *   รูด 19 ประตู
  **********************************************************/
 function generate19(d){
     let out = [];
 
-    // ด้านหลัง เช่น 1 → x1 = 01 11 21 ... 91
     for(let i=0;i<=9;i++){
-        out.push(pad2(i + "" + d));
+        out.push(pad2(i + "" + d)); // x d
     }
 
-    // ด้านหน้า เช่น 1 → 1x = 10 12 13 ... 19
     for(let i=0;i<=9;i++){
-        out.push(pad2(d + "" + i));
+        out.push(pad2(d + "" + i)); // d x
     }
 
     return out;
@@ -408,9 +416,7 @@ inputRood.addEventListener("input",(e)=>{
     let d=v[0];
     inputRood.value="";
 
-    let arr=generate19(d);
-
-    arr.forEach(n=>{
+    generate19(d).forEach(n=>{
         if(!currentNums.some(x=>x.val===n)){
             currentNums.push({val:n});
         }
@@ -420,10 +426,10 @@ inputRood.addEventListener("input",(e)=>{
 });
 
 /**********************************************************
- *   reverse number — ปิดในโหมดรูด/วิ่ง
+ *   reverse 2/3 ตัว
  **********************************************************/
 function reverseNumbers(){
-    if(mode==="19" || mode==="run") return;
+    if(mode==="19" || mode==="run" || mode==="win") return;
 
     let add=[];
 
@@ -446,7 +452,6 @@ function reverseNumbers(){
                 b+a+c, b+c+a,
                 c+a+b, c+b+a
             ];
-
             [...new Set(arr)].forEach(r=>{
                 if(!currentNums.some(x=>x.val===r))
                     add.push({val:r});
@@ -457,29 +462,126 @@ function reverseNumbers(){
     currentNums=currentNums.concat(add);
     renderNumbers();
 }
+/**********************************************************
+ *   โหมดวินเลข (ใหม่หมด)
+ **********************************************************/
+
+let winSelected = [];
+
+/* สร้างปุ่ม 0–9 สำหรับวิน */
+function initWinButtons(){
+    const zone = document.getElementById("winDigits");
+    zone.innerHTML = "";
+    winSelected = [];
+
+    function addBtn(n){
+        const b = document.createElement("div");
+        b.className = "win-btn";
+        b.textContent = n;
+
+        b.onclick = ()=>{
+
+            if(b.classList.contains("active")){
+                // เอาออก
+                b.classList.remove("active");
+                winSelected = winSelected.filter(x=>x!==String(n));
+            }else{
+
+                // จำกัด 2–7 ตัว
+                if(winSelected.length >= 7) return;
+
+                b.classList.add("active");
+                winSelected.push(String(n));
+            }
+        };
+
+        zone.appendChild(b);
+    }
+
+    for(let i=1;i<=9;i++) addBtn(i);
+    addBtn(0);
+}
 
 /**********************************************************
- *   ล้างเลข + ล้างบิล
+ *   คำนวณวินเลข
  **********************************************************/
-function clearNumbers(){
-    currentNums=[];
-    inputMain.value="";
-    inputRun.value="";
-    inputRood.value="";
-    buffer="";
-    lastDigits="";
+function winCalculate(){
+    if(winSelected.length < 2){
+        alert("เลือกเลขอย่างน้อย 2 ตัวก่อนนะ");
+        return;
+    }
+
+    let type = document.querySelector("input[name='winMode']:checked").value; 
+    let dup  = document.querySelector("input[name='winDup']:checked").value === "yes";
+
+    let out = [];
+
+    // ---------- วิน 2 ตัว ----------
+    if(type === "2"){
+        for(let i=0;i<winSelected.length;i++){
+            for(let j=i+1;j<winSelected.length;j++){
+                let a = winSelected[i];
+                let b = winSelected[j];
+
+                if(!dup && a===b) continue;
+                out.push(a+b);
+            }
+        }
+    }
+
+    // ---------- วิน 3 ตัว ----------
+    if(type === "3"){
+        for(let i=0;i<winSelected.length;i++){
+            for(let j=i+1;j<winSelected.length;j++){
+                for(let k=j+1;k<winSelected.length;k++){
+                    let a = winSelected[i];
+                    let b = winSelected[j];
+                    let c = winSelected[k];
+
+                    if(!dup && (a===b || b===c || a===c)) continue;
+                    out.push(a+b+c);
+                }
+            }
+        }
+    }
+
+    currentNums = out.map(v=>({val:v}));
     renderNumbers();
 }
 
-function clearNumbersAndBills(){
-    clearNumbers();
-    bills=[];
-    renderBills();
+/**********************************************************
+ *   reverse วินทั้งก้อน
+ **********************************************************/
+function winReverse(){
+    currentNums = currentNums.map(o=>({
+        val: o.val.split("").reverse().join("")
+    }));
+    renderNumbers();
 }
 
 /**********************************************************
- *   PART 2 END
+ *   ล้างเลือกวิน
  **********************************************************/
+function winClear(){
+    winSelected = [];
+    document.querySelectorAll(".win-btn").forEach(b=>b.classList.remove("active"));
+    currentNums = [];
+    renderNumbers();
+}
+
+/**********************************************************
+ *   รวมโหมดวินเข้าใน switchMode เดิม
+ **********************************************************/
+const oldSwitchMode = switchMode;
+
+switchMode = function(m){
+    oldSwitchMode(m);
+
+    if(m === "win"){
+        document.getElementById("zoneWin").style.display = "block";
+        initWinButtons();
+    }
+};
 /**********************************************************
  *   เพิ่มบิล (คิดเงิน)
  **********************************************************/
@@ -493,21 +595,12 @@ function addBill(){
 
     let total = 0;
 
-    if(mode==="2d"){
-        total = list.length * (t + b);
-    }
-
-    if(mode==="run"){
-        total = list.length * (t + b);
-    }
-
-    if(mode==="19"){
+    if(mode==="2d" || mode==="run" || mode==="19"){
         total = list.length * (t + b);
     }
 
     if(mode==="3d"){
-        // 3 ตัว = บน + โต๊ด (ล่าง = 0)
-        b = 0;
+        b = 0; 
         total = list.length * (t + td);
     }
 
@@ -525,7 +618,7 @@ function addBill(){
 }
 
 /**********************************************************
- *   เพิ่มบิล + ล้าง
+ *   เพิ่มบิล + ล้างเลข
  **********************************************************/
 function addBillAndReset(){
     if(!addBill()) return;
@@ -536,8 +629,9 @@ function addBillAndReset(){
     todPrice.value="";
 
     if(mode==="2d"||mode==="3d") inputMain.focus();
-    if(mode==="run")          inputRun.focus();
-    if(mode==="19")           inputRood.focus();
+    if(mode==="run") inputRun.focus();
+    if(mode==="19") inputRood.focus();
+    if(mode==="win"){} // วินไม่ต้องโฟกัสอินพุต
 }
 
 /**********************************************************
@@ -549,7 +643,7 @@ function delBill(i){
 }
 
 /**********************************************************
- *   วาดบิลทั้งหมด
+ *   จัดเรียงบิล
  **********************************************************/
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
@@ -587,14 +681,13 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        // ชื่อบิลถูกต้องตามโหมด
         let title = "";
-        if(b.mode==="2d") title = "2 ตัว";
-        if(b.mode==="3d") title = "3 ตัว";
-        if(b.mode==="19") title = "รูด 19";
-        if(b.mode==="run") title = "วิ่ง";
+        if(b.mode==="2d") title="2 ตัว";
+        if(b.mode==="3d") title="3 ตัว";
+        if(b.mode==="19") title="รูด 19";
+        if(b.mode==="run") title="วิ่ง";
+        if(b.mode==="win") title="วินเลข";
 
-        // แสดงตัวคูณ (3 ตัว ใช้ บน × ล่าง × โต๊ด)
         let priceLine = "";
         if(b.mode==="3d"){
             priceLine = `${b.top} × 0 × ${b.tod}`;
@@ -602,7 +695,7 @@ function renderBills(){
             priceLine = `${b.top} × ${b.bottom}`;
         }
 
-        let lines=groupByWidth(b.nums, b.mode==="3d" ? w : w*0.7)
+        let lines=groupByWidth(b.nums, b.mode==="3d"? w : w*0.7)
             .map(l=>`<div class="bill-line">${l}</div>`).join("");
 
         html+=`
@@ -622,7 +715,7 @@ function renderBills(){
 }
 
 /**********************************************************
- *   ระบบ TAB — ราคา บน → ล่าง → โต๊ด → เพิ่มบิล
+ *   ระบบ TAB
  **********************************************************/
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
@@ -630,48 +723,48 @@ document.addEventListener("keydown",(e)=>{
 
     let el=document.activeElement;
 
-    // input โหมดเลข → ราคา บน
     if(el===inputMain || el===inputRun || el===inputRood){
-        topPrice.focus(); topPrice.select(); return;
+        topPrice.focus(); 
+        topPrice.select(); 
+        return;
     }
 
-    // จากราคา บน →
     if(el===topPrice){
         if(mode==="3d"){
-            todPrice.focus(); todPrice.select(); return;
+            todPrice.focus(); 
+            todPrice.select(); 
         }else{
-            bottomPrice.focus(); bottomPrice.select(); return;
+            bottomPrice.focus(); 
+            bottomPrice.select();
         }
+        return;
     }
 
-    // จากราคา ล่าง → เพิ่มบิล
     if(el===bottomPrice){
         addBillAndReset(); 
         return;
     }
 
-    // จากราคา โต๊ด → เพิ่มบิล
     if(el===todPrice){
-        addBillAndReset();
+        addBillAndReset(); 
         return;
     }
 });
 
 /**********************************************************
- *   SPACEBAR = กลับเลข
+ *   SPACEBAR = reverse โหมดปกติ
  **********************************************************/
 document.addEventListener("keydown",(e)=>{
     if(e.code==="Space"){
-        e.preventDefault();
+        if(mode==="2d"||mode==="3d") e.preventDefault();
         reverseNumbers();
     }
 });
 
 /**********************************************************
- *   ปิดไฟล์ HTML
+ *   END SCRIPT + ปิดไฟล์ HTML
  **********************************************************/
 </script>
 
 </body>
-</html>      
-
+</html>
