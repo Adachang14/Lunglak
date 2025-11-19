@@ -619,14 +619,13 @@ function renderBills(){
                 <div class="bill-title">${title}</div>
                 <div class="bill-price">${priceLine}</div>
                 <div>${lines}</div>
-                <div class="bill-total">รวมบิล: ${b.total} บาท</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
     });
 
     document.getElementById("billList").innerHTML=html;
-    document.getElementById("totalAll").textContent=`รวมทั้งหมด: ${total} บาท`;
+    document.getElementById("totalAll").textContent=`ราคารวม: ${total} บาท`;
 }
 
 function delBill(i){
