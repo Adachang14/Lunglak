@@ -52,10 +52,6 @@
         font-size:16px;
         transition:0.2s;
     }
-    .highlight {
-        box-shadow:0 0 10px #ff44c7;
-        border-color:#ff44c7 !important;
-    }
 
     .numbers-container {
         min-height:50px;
@@ -139,12 +135,6 @@
         font-size:14px;
     }
 
-    .bill-multiply {
-        font-weight:bold;
-        margin-bottom:8px;
-    }
-
-    /* กล่องเลขในบิล */
     .bill-nums {
         background:#f8f8f8;
         padding:10px;
@@ -161,11 +151,6 @@
         white-space:nowrap;
         margin-bottom:4px;
         display:block;
-    }
-
-    .bill-total {
-        font-weight:bold;
-        color:#d7006a;
     }
 
     .del-btn {
@@ -203,15 +188,14 @@
         <button class="mode-btn" id="btnRun" onclick="switchMode('run')">เลขวิ่ง</button>
     </div>
 
-    <div class="label">ช่อง 1: พิมพ์หรือกอปเลข</div>
-    <input id="inputNums" type="text" placeholder="เช่น 12 25 หรือ 123 456">
+    <div class="label">ช่อง 1: พิมพ์เลขอย่างเดียว</div>
+    <input id="inputNums" type="text" placeholder="เช่น 12 หรือ 123 หรือ 1 (19 ประตู/วิ่ง)">
 
     <div class="label">ช่อง 2: เลขล้วน (ลบทีละตัว)</div>
     <div id="numbersContainer" class="numbers-container"></div>
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
-        <!-- ล้างเลข + ล้างบิลทั้งหมด -->
         <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
@@ -223,7 +207,7 @@
     <button id="btnAdd" class="btn-add" onclick="addBillAndReset()">+ เพิ่มบิล</button>
 
     <div class="bill-box" id="billList"></div>
-    <div id="totalAll" class="total-all">รวมทั้งหมด: 0 บาท</div>
+    <div id="totalAll" class="total-all">ราคารวมทั้งหมด: 0 บาท</div>
 
 </div>
 
@@ -244,37 +228,34 @@ const bottomPrice = document.getElementById("bottom");
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-/* ========== ฟังก์ชันวัดความกว้างข้อความ แล้วแบ่งบรรทัด ========== */
 const _measureCanvas = document.createElement("canvas");
 const _measureCtx = _measureCanvas.getContext("2d");
-// ให้ฟอนต์ตรงกับ .bill-nums
 _measureCtx.font = "15px 'Sarabun', sans-serif";
 
 function groupByWidth(nums, maxWidth){
     const lines = [];
     let current = "";
-    let currentWidth = 0;
+    let width = 0;
 
-    nums.forEach((n) => {
-        const token = (current ? " " : "") + n;
+    nums.forEach(n=>{
+        const token = (current? " ":"") + n;
         const w = _measureCtx.measureText(token).width;
 
-        if (current && currentWidth + w > maxWidth){
+        if(current && width + w > maxWidth){
             lines.push(current);
             current = n;
-            currentWidth = _measureCtx.measureText(n).width;
+            width = _measureCtx.measureText(n).width;
         } else {
-            current += (current ? " " : "") + n;
-            currentWidth += w;
+            current += (current?" ":"") + n;
+            width += w;
         }
     });
 
     if(current) lines.push(current);
     return lines;
 }
-/* ================================================================ */
 
-/* ------------- SWITCH MODE ------------- */
+/* ---------------- SWITCH MODE ---------------- */
 function switchMode(m){
     mode = m;
 
@@ -287,12 +268,12 @@ function switchMode(m){
     clearNumbers();
 
     inputNums.value = "";
-    lastDigits = "";
     buffer = "";
+    lastDigits = "";
     inputNums.focus();
 }
 
-/* ------------- RENDER PILL ------------- */
+/* ---------------- RENDER PILL ---------------- */
 function renderNumbers(){
     numbersContainer.innerHTML = "";
     currentNums.forEach((obj, idx)=>{
@@ -307,39 +288,67 @@ function renderNumbers(){
     });
 }
 
-/* ------------- HANDLE PASTE ------------- */
-inputNums.addEventListener("paste", ()=> isPaste = true);
+/* ---------------- HANDLE PASTE (ปิดเฉพาะ 19 / วิ่ง) ---------------- */
+inputNums.addEventListener("paste",(e)=>{
+    if(mode==="19" || mode==="run"){
+        e.preventDefault();
+        return;
+    }
+    isPaste = true;
+});
 
-function handlePaste(text){
-    let clean = text.replace(/[^0-9\s]/g," ");
-    let tokens = clean.split(/\s+/).filter(x=>x);
-
-    tokens.forEach(t=>{
-        if(mode==="2d"){
-            if(t.length===2) currentNums.push({val:pad2(t), error:false});
-            else if(t.length===1) currentNums.push({val:t, error:true});
-        }
-        if(mode==="3d"){
-            if(t.length===3) currentNums.push({val:pad3(t), error:false});
-            else if(t.length===1 || t.length===2)
-                currentNums.push({val:t, error:true});
-        }
-    });
-
-    renderNumbers();
-}
-
-/* ------------- TYPING ------------- */
+/* ---------------- INPUT LOGIC ---------------- */
 inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
+
+    /* ---- MODE 19 ประตู ---- */
+    if(mode==="19"){
+        clearNumbers();
+        let d = v.replace(/\D/g,"");
+        if(d.length>=1){
+            let x = d[0];
+            let arr = [];
+            for(let i=0; i<10; i++) arr.push(x + i);
+            for(let i=0; i<10; i++) arr.push(i + x);
+            currentNums = arr.map(n=>({val:n,error:false}));
+        }
+        renderNumbers();
+        return;
+    }
+
+    /* ---- MODE วิ่ง ---- */
+    if(mode==="run"){
+        clearNumbers();
+        let d = v.replace(/\D/g,"");
+        if(d.length>=1){
+            currentNums = [{val:d[0], error:false}];
+        }
+        renderNumbers();
+        return;
+    }
+
+    /* ---- MODE 2 / 3 ตัว (เหมือนเดิม) ---- */
     let digits = v.replace(/\D/g,"");
 
     if(isPaste){
-        handlePaste(v);
+        let clean = v.replace(/[^0-9\s]/g," ");
+        let tokens = clean.split(/\s+/).filter(x=>x);
+
+        tokens.forEach(t=>{
+            if(mode==="2d"){
+                if(t.length===2) currentNums.push({val:pad2(t), error:false});
+                else if(t.length===1) currentNums.push({val:t, error:true});
+            }
+            if(mode==="3d"){
+                if(t.length===3) currentNums.push({val:pad3(t), error:false});
+                else if(t.length===1 || t.length===2)
+                    currentNums.push({val:t, error:true});
+            }
+        });
+
         isPaste = false;
-        setTimeout(()=> inputNums.value="", 200);
-        lastDigits = "";
-        buffer = "";
+        setTimeout(()=>inputNums.value="",150);
+        renderNumbers();
         return;
     }
 
@@ -351,7 +360,6 @@ inputNums.addEventListener("input",(e)=>{
 
     let newDigit = digits.slice(lastDigits.length);
     lastDigits = digits;
-
     buffer += newDigit;
 
     if(mode==="2d"){
@@ -360,7 +368,6 @@ inputNums.addEventListener("input",(e)=>{
             buffer = buffer.slice(2);
         }
     }
-
     if(mode==="3d"){
         while(buffer.length>=3){
             currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
@@ -371,18 +378,18 @@ inputNums.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ------------- REVERSE ------------- */
+/* ---------------- REVERSE ---------------- */
 function reverse3digit(num){
     const [a,b,c] = num.split("");
-    if(a===b&&b===c) return [num];
+    if(a===b && b===c) return [num];
     return [...new Set([
-        a+b+c,a+c+b,
-        b+a+c,b+c+a,
-        c+a+b,c+b+a
+        a+b+c,a+c+b,b+a+c,b+c+a,c+a+b,c+b+a
     ])];
 }
 
 function reverseNumbers(){
+    if(mode==="19" || mode==="run") return; // ปิดกลับเลขใน 2 โหมดนี้
+
     let add = [];
 
     currentNums.forEach(obj=>{
@@ -409,7 +416,7 @@ function reverseNumbers(){
     renderNumbers();
 }
 
-/* ------------- CLEAR (เฉพาะเลข) ------------- */
+/* ---------------- CLEAR ---------------- */
 function clearNumbers(){
     currentNums=[];
     buffer="";
@@ -417,22 +424,15 @@ function clearNumbers(){
     renderNumbers();
 }
 
-/* ------------- CLEAR + ล้างบิลทั้งหมด ------------- */
 function clearNumbersAndBills(){
     clearNumbers();
-    bills = [];
+    bills=[];
     renderBills();
 }
 
-/* ------------- ADD BILL ------------- */
+/* ---------------- ADD BILL ---------------- */
 function addBill(){
-    let valid = currentNums.filter(o=>{
-        if(o.error) return false;
-        if(mode==="2d" && o.val.length!==2) return false;
-        if(mode==="3d" && o.val.length!==3) return false;
-        return true;
-    }).map(o=>o.val);
-
+    let valid = currentNums.filter(o=>!o.error).map(o=>o.val);
     if(valid.length===0) return false;
 
     let t = Number(topPrice.value||0);
@@ -450,7 +450,6 @@ function addBill(){
     return true;
 }
 
-/* หลังเพิ่มบิล: ล้างเลข + ล้างราคา + โฟกัสกลับช่อง 1 */
 function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
@@ -460,37 +459,33 @@ function addBillAndReset(){
     inputNums.focus();
 }
 
-/* ------------- DELETE BILL ------------- */
+/* ---------------- DELETE BILL ---------------- */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/* ------------- RENDER BILL LIST ------------- */
+/* ---------------- RENDER BILL LIST ---------------- */
 function renderBills(){
     let html="";
     let total=0;
 
     const billBox = document.getElementById("billList");
-    const maxWidth = Math.max((billBox.clientWidth || 0) - 40, 100);
+    const maxWidth = Math.max((billBox.clientWidth||0)-40,100);
 
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        /* ให้ 2 ตัวใช้ความกว้างแคบลงหน่อย จะได้ตัดบรรทัดถี่ขึ้นคล้าย 3 ตัว */
-        const widthForThisBill = b.mode === "3d" ? maxWidth : maxWidth * 0.7;
-
-        const lineStrings = groupByWidth(b.nums, widthForThisBill);
-        const lines = lineStrings.map(l=>`<div class="bill-line">${l}</div>`).join("");
+        const widthForThisBill = (b.mode==="3d") ? maxWidth : maxWidth*0.7;
+        const groups = groupByWidth(b.nums, widthForThisBill);
+        const lines = groups.map(l=>`<div class="bill-line">${l}</div>`).join("");
 
         html+=`
         <div class="bill">
             <div class="bill-left">
-                <div class="bill-title">${b.mode==="3d"?"3 ตัว":"2 ตัว"}</div>
-                <div class="bill-price">${b.mode==="3d"?"บน × ล่าง × โต๊ด":"บน × ล่าง"}</div>
-                <div class="bill-multiply">${b.top} × ${b.bottom}</div>
+                <div class="bill-title">${b.mode==="3d"?"3 ตัว": b.mode==="2d"?"2 ตัว": b.mode==="19"?"19 ประตู":"เลขวิ่ง"}</div>
+                <div class="bill-price">${b.top} × ${b.bottom}</div>
                 <div class="bill-nums">${lines}</div>
-                
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>
@@ -498,10 +493,10 @@ function renderBills(){
     });
 
     document.getElementById("billList").innerHTML = html;
-    document.getElementById("totalAll").innerText = `ราคารวม: ${total} บาท`;
+    document.getElementById("totalAll").innerText = `ราคารวมทั้งหมด: ${total} บาท`;
 }
 
-/* ------------- TAB SYSTEM (ราคา บน → ล่าง → เพิ่มบิล) ------------- */
+/* ---------------- TAB SYSTEM ---------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
     e.preventDefault();
@@ -519,9 +514,10 @@ document.addEventListener("keydown",(e)=>{
     inputNums.focus();
 });
 
-/* ------------- SPACE = REVERSE ------------- */
+/* ---------------- SPACE = REVERSE ---------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.code==="Space"){
+        if(mode==="19" || mode==="run") return;
         e.preventDefault();
         reverseNumbers();
     }
