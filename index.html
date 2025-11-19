@@ -76,10 +76,10 @@
         cursor:pointer;
     }
 
-    .row { 
-        display:flex; 
-        gap:10px; 
-        margin:10px 0; 
+    .row {
+        display:flex;
+        gap:10px;
+        margin:10px 0;
     }
 
     input[type="number"] {
@@ -90,9 +90,9 @@
         font-size:16px;
     }
 
-    .btn-rev  { background:#ffe06c; padding:12px 16px; border-radius:10px; font-weight:bold; }
-    .btn-clear{ background:#ffb3c1; padding:12px 16px; border-radius:10px; font-weight:bold; }
-    .btn-add  { background:#ff44c7; color:white; padding:12px 16px; border-radius:10px; font-weight:bold; }
+    .btn-rev { background:#ffe06c; padding:12px 16px; border-radius:10px; font-weight:bold; cursor:pointer; }
+    .btn-clear{ background:#ffb3c1; padding:12px 16px; border-radius:10px; font-weight:bold; cursor:pointer; }
+    .btn-add  { background:#ff44c7; color:white; padding:12px 16px; border-radius:10px; font-weight:bold; cursor:pointer; }
 
     .bill-box {
         margin-top:20px;
@@ -117,7 +117,7 @@
     .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; }
     .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
 
-    /* ---------------- วินเลข ---------------- */
+    /* วินเลข */
     .win-grid {
         display:grid;
         grid-template-columns: repeat(5, 1fr);
@@ -174,7 +174,7 @@
         <input id="inputRun" type="text" autocomplete="off">
     </div>
 
-    <!-- วินเลข -->
+    <!-- วิน -->
     <div id="zoneWin" style="display:none; margin-top:20px;">
         <div style="margin-bottom:10px;">
             <label><input type="radio" name="winMode" value="2" checked> จับวิน 2 ตัว</label>
@@ -222,9 +222,8 @@
 </div>
 
 <script>
-/**********************************************************
- *   ตัวแปรหลัก
- **********************************************************/
+
+/* ---------------- ตัวแปรหลัก ---------------- */
 let bills = [];
 let currentNums = [];
 
@@ -245,9 +244,8 @@ const todPrice   = document.getElementById("tod");
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-/**********************************************************
- *   เปลี่ยนโหมด
- **********************************************************/
+
+/* ---------------- เปลี่ยนโหมด ---------------- */
 function baseSwitchMode(m){
     mode = m;
 
@@ -291,9 +289,8 @@ function switchMode(m){
     }
 }
 
-/**********************************************************
- *   แสดงเลข pill
- **********************************************************/
+
+/* ---------------- แสดงเลข pill ---------------- */
 function renderNumbers(){
     numbersContainer.innerHTML="";
     currentNums.forEach((obj,idx)=>{
@@ -308,9 +305,8 @@ function renderNumbers(){
     });
 }
 
-/**********************************************************
- *   พิมพ์ 2/3 ตัว + paste
- **********************************************************/
+
+/* ---------------- input 2/3 ตัว ---------------- */
 inputMain.addEventListener("paste",()=> isPaste=true);
 
 inputMain.addEventListener("input",(e)=>{
@@ -360,9 +356,8 @@ function handlePaste(text){
     renderNumbers();
 }
 
-/**********************************************************
- *   วิ่ง
- **********************************************************/
+
+/* ---------------- วิ่ง ---------------- */
 inputRun.addEventListener("paste",e=> e.preventDefault());
 
 inputRun.addEventListener("input",(e)=>{
@@ -374,9 +369,8 @@ inputRun.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/**********************************************************
- *   รูด 19
- **********************************************************/
+
+/* ---------------- รูด 19 ---------------- */
 function generate19(d){
     let out=[];
     for(let i=0;i<=9;i++) out.push(pad2(i+d));
@@ -398,9 +392,8 @@ inputRood.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/**********************************************************
- *   reverse 2/3 ตัว
- **********************************************************/
+
+/* ---------------- reverse 2/3 ตัว ---------------- */
 function reverseNumbers(){
     if(mode==="run"||mode==="19"||mode==="win") return;
 
@@ -426,9 +419,8 @@ function reverseNumbers(){
     renderNumbers();
 }
 
-/**********************************************************
- *   วินเลข
- **********************************************************/
+
+/* ---------------- วินเลข ---------------- */
 let winSelected=[];
 
 function initWinButtons(){
@@ -459,47 +451,72 @@ function initWinButtons(){
     addBtn(0);
 }
 
+
+/* ------------- WIN CALCULATE (ใหม่ 100% ตรงสูตร) ------------- */
 function winCalculate(){
-    if(winSelected.length<2){
+    if(winSelected.length < 2){
         alert("เลือกเลขอย่างน้อย 2 ตัว");
         return;
     }
 
     let type = document.querySelector("input[name='winMode']:checked").value;
-    let dup  = document.querySelector("input[name='winDup']:checked").value==="yes";
+    let dup  = document.querySelector("input[name='winDup']:checked").value === "yes";
+    let out = [];
 
-    let out=[];
+    // วิน 2 ตัว
+    if(type === "2"){
+        for(let i=0; i<winSelected.length; i++){
+            for(let j=0; j<winSelected.length; j++){
 
-    if(type==="2"){
-        for(let i=0;i<winSelected.length;i++){
-            for(let j=i+1;j<winSelected.length;j++){
-                let a=winSelected[i], b=winSelected[j];
-                if(!dup && a===b) continue;
-                out.push(a+b);
+                if(!dup){
+                    // ไม่รวมเบิ้ล → ห้าม i=j และต้อง i<j เพื่อกันซ้ำ
+                    if(i >= j) continue;
+                    if(winSelected[i] === winSelected[j]) continue;
+                }
+
+                out.push(winSelected[i] + winSelected[j]);
             }
         }
     }
 
-    if(type==="3"){
-        for(let i=0;i<winSelected.length;i++){
-            for(let j=i+1;j<winSelected.length;j++){
-                for(let k=j+1;k<winSelected.length;k++){
-                    let a=winSelected[i],b=winSelected[j],c=winSelected[k];
-                    if(!dup && (a===b||b===c||a===c)) continue;
-                    out.push(a+b+c);
+    // วิน 3 ตัว
+    if(type === "3"){
+        for(let i=0; i<winSelected.length; i++){
+            for(let j=0; j<winSelected.length; j++){
+                for(let k=0; k<winSelected.length; k++){
+
+                    if(!dup){
+                        // ไม่รวมเบิ้ล → ต้องตัวไม่ซ้ำ และเรียง i<j<k
+                        if(i >= j || j >= k) continue;
+                        if(winSelected[i] === winSelected[j]) continue;
+                        if(winSelected[j] === winSelected[k]) continue;
+                        if(winSelected[i] === winSelected[k]) continue;
+                    }
+
+                    out.push(winSelected[i] + winSelected[j] + winSelected[k]);
                 }
             }
         }
     }
 
-    currentNums = out.map(v=>({val:v}));
+    currentNums = out.map(v => ({ val: v }));
     renderNumbers();
 }
 
+
+/* ------------- REV WIN (ใหม่ ไม่กลับเบิ้ล/ตอง) ------------- */
 function winReverse(){
-    currentNums = currentNums.map(o=>({
-        val: o.val.split("").reverse().join("")
-    }));
+    currentNums = currentNums.map(o => {
+        let v = o.val;
+
+        // ถ้าตัวซ้ำหมด = เบิ้ล/ตอง → ห้ามกลับ
+        let allSame = v.split("").every(ch => ch === v[0]);
+        if(allSame) return { val: v };
+
+        // ปกติ
+        return { val: v.split("").reverse().join("") };
+    });
+
     renderNumbers();
 }
 
@@ -510,9 +527,8 @@ function winClear(){
     renderNumbers();
 }
 
-/**********************************************************
- *   เพิ่มบิล
- **********************************************************/
+
+/* ---------------- เพิ่มบิล ---------------- */
 function addBill(){
     let list=currentNums.map(x=>x.val);
     if(list.length===0) return false;
@@ -542,9 +558,8 @@ function addBill(){
     return true;
 }
 
-/**********************************************************
- *   เพิ่มบิล + ล้าง
- **********************************************************/
+
+/* ---------------- เพิ่มบิล + รีเซ็ต ---------------- */
 function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
@@ -558,17 +573,15 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/**********************************************************
- *   ลบบิล
- **********************************************************/
+
+/* ---------------- ลบบิล ---------------- */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/**********************************************************
- *   วาดบิล
- **********************************************************/
+
+/* ---------------- วาดบิล ---------------- */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun', sans-serif";
@@ -631,9 +644,22 @@ function renderBills(){
     document.getElementById("totalAll").textContent=`รวมทั้งหมด: ${total} บาท`;
 }
 
-/**********************************************************
- *   TAB
- **********************************************************/
+
+/* ---------------- ล้างเลข ---------------- */
+function clearNumbers(){
+    currentNums=[];
+    renderNumbers();
+}
+
+function clearNumbersAndBills(){
+    currentNums=[];
+    bills=[];
+    renderNumbers();
+    renderBills();
+}
+
+
+/* ---------------- TAB ---------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
     e.preventDefault();
@@ -643,18 +669,19 @@ document.addEventListener("keydown",(e)=>{
     if(el===inputMain||el===inputRun||el===inputRood){
         topPrice.focus(); topPrice.select(); return;
     }
+
     if(el===topPrice){
         if(mode==="3d"){ todPrice.focus(); todPrice.select(); }
         else { bottomPrice.focus(); bottomPrice.select(); }
         return;
     }
+
     if(el===bottomPrice){ addBillAndReset(); return; }
     if(el===todPrice){ addBillAndReset(); return; }
 });
 
-/**********************************************************
- *   Space = reverse
- **********************************************************/
+
+/* ---------------- SPACE = reverse ---------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.code==="Space"){
         if(mode==="2d"||mode==="3d"){
