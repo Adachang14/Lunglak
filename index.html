@@ -190,7 +190,7 @@
 
     <div style="display:flex; gap:10px; margin-top:15px;">
         <button class="btn-add" onclick="winCalculate()">คำนวณ</button>
-        <button class="btn-rev" onclick="winReverse()">กลับเลขวิน</button>
+        <button class="btn-rev" onclick="winReverse()">กลับวิน</button>
         <button class="btn-clear" onclick="winClear()" style="background:#ff4c4c;color:white;">🗑 ยกเลิก</button>
     </div>
 </div>
@@ -439,9 +439,9 @@ function initWinButtons(){
     addBtn(0);
 }
 
-/* ========== คำนวณวิน (ใหม่ 100%) ========== */
+/* ========== (เวอร์ชันใหม่) คำนวณวิน แบบไม่กลับเอง ========== */
 function winCalculate(){
-    if(winSelected.length<2){
+    if(winSelected.length < 2){
         alert("เลือกเลขอย่างน้อย 2 ตัว");
         return;
     }
@@ -450,35 +450,45 @@ function winCalculate(){
     let dup  = document.querySelector("input[name='winDup']:checked").value === "yes";
     let out=[];
 
-    /* ---------- วิน 2 ตัว ---------- */
+    /* ======== วิน 2 ตัว ======== */
     if(type==="2"){
         for(let i=0;i<winSelected.length;i++){
             for(let j=0;j<winSelected.length;j++){
 
-                if(!dup){
-                    if(i>=j) continue;
-                    if(winSelected[i]===winSelected[j]) continue;
+                if(dup){
+                    // รวมเบิ้ล แต่ไม่กลับเอง → i <= j
+                    if(i <= j){
+                        out.push(winSelected[i] + winSelected[j]);
+                    }
+                }else{
+                    // ไม่รวมเบิ้ล → i < j อย่างเดียว
+                    if(i < j){
+                        out.push(winSelected[i] + winSelected[j]);
+                    }
                 }
 
-                out.push(winSelected[i]+winSelected[j]);
             }
         }
     }
 
-    /* ---------- วิน 3 ตัว ---------- */
+    /* ======== วิน 3 ตัว ======== */
     if(type==="3"){
         for(let i=0;i<winSelected.length;i++){
             for(let j=0;j<winSelected.length;j++){
                 for(let k=0;k<winSelected.length;k++){
 
-                    if(!dup){
-                        if(i>=j || j>=k) continue;
-                        if(winSelected[i]===winSelected[j]) continue;
-                        if(winSelected[j]===winSelected[k]) continue;
-                        if(winSelected[i]===winSelected[k]) continue;
+                    if(dup){
+                        // รวมเบิ้ล แต่ไม่กลับเอง → i <= j <= k
+                        if(i <= j && j <= k){
+                            out.push(winSelected[i] + winSelected[j] + winSelected[k]);
+                        }
+                    }else{
+                        // ไม่รวมเบิ้ล → i < j < k
+                        if(i < j && j < k){
+                            out.push(winSelected[i] + winSelected[j] + winSelected[k]);
+                        }
                     }
 
-                    out.push(winSelected[i]+winSelected[j]+winSelected[k]);
                 }
             }
         }
