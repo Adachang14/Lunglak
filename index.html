@@ -144,7 +144,6 @@
         margin-bottom:8px;
     }
 
-    /* กล่องเลขในบิล */
     .bill-nums {
         background:#f8f8f8;
         padding:10px;
@@ -211,7 +210,6 @@
 
     <div class="row">
         <button class="btn-rev" onclick="reverseNumbers()">กลับเลข</button>
-        <!-- ล้างเลข + ล้างบิลทั้งหมด -->
         <button class="btn-clear" onclick="clearNumbersAndBills()">ล้างเลข</button>
     </div>
 
@@ -236,18 +234,16 @@ let buffer = "";
 let lastDigits = "";
 let isPaste = false;
 
-const inputNums = document.getElementById("inputNums");
+const inputNums     = document.getElementById("inputNums");
 const numbersContainer = document.getElementById("numbersContainer");
-const topPrice = document.getElementById("top");
-const bottomPrice = document.getElementById("bottom");
+const topPrice      = document.getElementById("top");
+const bottomPrice   = document.getElementById("bottom");
 
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-/* ========== ฟังก์ชันวัดความกว้างข้อความ แล้วแบ่งบรรทัด ========== */
 const _measureCanvas = document.createElement("canvas");
 const _measureCtx = _measureCanvas.getContext("2d");
-// ให้ฟอนต์ตรงกับ .bill-nums
 _measureCtx.font = "15px 'Sarabun', sans-serif";
 
 function groupByWidth(nums, maxWidth){
@@ -272,9 +268,7 @@ function groupByWidth(nums, maxWidth){
     if(current) lines.push(current);
     return lines;
 }
-/* ================================================================ */
 
-/* ------------- SWITCH MODE ------------- */
 function switchMode(m){
     mode = m;
 
@@ -285,14 +279,12 @@ function switchMode(m){
     document.getElementById("btnRun").classList.toggle("active", m==="run");
 
     clearNumbers();
-
     inputNums.value = "";
     lastDigits = "";
     buffer = "";
     inputNums.focus();
 }
 
-/* ------------- RENDER PILL ------------- */
 function renderNumbers(){
     numbersContainer.innerHTML = "";
     currentNums.forEach((obj, idx)=>{
@@ -307,7 +299,6 @@ function renderNumbers(){
     });
 }
 
-/* ------------- HANDLE PASTE ------------- */
 inputNums.addEventListener("paste", ()=> isPaste = true);
 
 function handlePaste(text){
@@ -329,7 +320,11 @@ function handlePaste(text){
     renderNumbers();
 }
 
-/* ------------- TYPING ------------- */
+/*  
+===============================
+   TYPING (จุดเดียวที่แก้)
+===============================
+*/
 inputNums.addEventListener("input",(e)=>{
     let v = e.target.value;
     let digits = v.replace(/\D/g,"");
@@ -358,6 +353,9 @@ inputNums.addEventListener("input",(e)=>{
         while(buffer.length>=2){
             currentNums.push({val:pad2(buffer.slice(0,2)), error:false});
             buffer = buffer.slice(2);
+            inputNums.value = "";
+            buffer = "";
+            lastDigits = "";
         }
     }
 
@@ -365,13 +363,16 @@ inputNums.addEventListener("input",(e)=>{
         while(buffer.length>=3){
             currentNums.push({val:pad3(buffer.slice(0,3)), error:false});
             buffer = buffer.slice(3);
+            inputNums.value = "";
+            buffer = "";
+            lastDigits = "";
         }
     }
 
     renderNumbers();
 });
+/* END TYPING */
 
-/* ------------- REVERSE ------------- */
 function reverse3digit(num){
     const [a,b,c] = num.split("");
     if(a===b&&b===c) return [num];
@@ -409,7 +410,6 @@ function reverseNumbers(){
     renderNumbers();
 }
 
-/* ------------- CLEAR (เฉพาะเลข) ------------- */
 function clearNumbers(){
     currentNums=[];
     buffer="";
@@ -417,14 +417,12 @@ function clearNumbers(){
     renderNumbers();
 }
 
-/* ------------- CLEAR + ล้างบิลทั้งหมด ------------- */
 function clearNumbersAndBills(){
     clearNumbers();
     bills = [];
     renderBills();
 }
 
-/* ------------- ADD BILL ------------- */
 function addBill(){
     let valid = currentNums.filter(o=>{
         if(o.error) return false;
@@ -450,7 +448,6 @@ function addBill(){
     return true;
 }
 
-/* หลังเพิ่มบิล: ล้างเลข + ล้างราคา + โฟกัสกลับช่อง 1 */
 function addBillAndReset(){
     if(!addBill()) return;
     clearNumbers();
@@ -460,13 +457,11 @@ function addBillAndReset(){
     inputNums.focus();
 }
 
-/* ------------- DELETE BILL ------------- */
 function delBill(i){
     bills.splice(i,1);
     renderBills();
 }
 
-/* ------------- RENDER BILL LIST ------------- */
 function renderBills(){
     let html="";
     let total=0;
@@ -477,7 +472,6 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total+=b.total;
 
-        /* ให้ 2 ตัวใช้ความกว้างแคบลงหน่อย จะได้ตัดบรรทัดถี่ขึ้นคล้าย 3 ตัว */
         const widthForThisBill = b.mode === "3d" ? maxWidth : maxWidth * 0.7;
 
         const lineStrings = groupByWidth(b.nums, widthForThisBill);
@@ -501,7 +495,6 @@ function renderBills(){
     document.getElementById("totalAll").innerText = `รวมทั้งหมด: ${total} บาท`;
 }
 
-/* ------------- TAB SYSTEM (ราคา บน → ล่าง → เพิ่มบิล) ------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.key!=="Tab") return;
     e.preventDefault();
@@ -519,7 +512,6 @@ document.addEventListener("keydown",(e)=>{
     inputNums.focus();
 });
 
-/* ------------- SPACE = REVERSE ------------- */
 document.addEventListener("keydown",(e)=>{
     if(e.code==="Space"){
         e.preventDefault();
@@ -529,5 +521,4 @@ document.addEventListener("keydown",(e)=>{
 </script>
 
 </body>
-</html>  
-
+</html>
