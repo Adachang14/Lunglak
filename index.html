@@ -111,10 +111,9 @@
         border:1px solid #ddd;
     }
 
-    .bill-title { font-weight:bold; margin-bottom:5px; }
-    .bill-price { font-weight:bold; color:#333; margin-bottom:5px; }
-    .bill-total { font-weight:bold; color:#d7006a; }
-    .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; }
+    .bill-title { font-weight:bold; margin-bottom:2px; font-size:16px; }
+    .bill-price { font-weight:bold; color:#333; margin-bottom:5px; font-size:15px; }
+    .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; align-self: flex-start; }
     .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
 
     .win-grid {
@@ -461,7 +460,7 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ==================== Render Bills (Clean & Custom Labels) ==================== */
+/* ==================== Render Bills (Clean & 3-Line Layout) ==================== */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun'";
@@ -486,17 +485,18 @@ function renderBills(){
         total+=b.total;
         let title= b.mode==="2d"?"เลข 2 ตัว": b.mode==="3d"?"เลข 3 ตัว": b.mode==="run"?"เลขวิ่ง": b.mode==="19"?"เลขรูด":"เลขวิน";
         
-        // แก้ไขส่วน Label ราคาตามประเภท
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
-        let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.7).map(l=>`<div>${l}</div>`).join("");
+        let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.85).map(l=>`<div>${l}</div>`).join("");
         
+        // เรียงแบบ 3 บรรทัดตามที่คุณต้องการ
         html+=`<div class="bill">
-            <div>
+            <div style="width: 100%;">
                 <div class="bill-title">${title}</div>
-                <div class="bill-price">${label}: ${priceLine}</div>
-                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 1px;">${lines}</div>
+                <div class="bill-price">${label}</div>
+                <div class="bill-price">${priceLine}</div>
+                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 1px; line-height: 1.4;">${lines}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
