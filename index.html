@@ -461,7 +461,7 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ==================== Render Bills (Clean Version) ==================== */
+/* ==================== Render Bills ==================== */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun'";
@@ -502,8 +502,14 @@ function renderBills(){
 }
 
 function delBill(i){ bills.splice(i,1); renderBills(); }
-function clearNumbersOnly(){ currentNums=[]; renderNumbers(); }
-function clearNumbersAndBills(){ bills=[]; currentNums=[]; renderNumbers(); renderBills(); }
+
+/* แก้ไขใหม่: ฟังก์ชันล้างเลข ให้ล้างทั้งเลขปัจจุบันและบิลทั้งหมด */
+function clearNumbersOnly(){ 
+    currentNums=[]; 
+    bills=[]; 
+    renderNumbers(); 
+    renderBills(); 
+}
 
 /* ==================== Keyboard shortcuts ==================== */
 document.addEventListener("keydown",(e)=>{
