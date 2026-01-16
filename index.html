@@ -137,6 +137,15 @@
         color:white;
         border-color:#ff9800;
     }
+    /* สไตล์สำหรับกล่องเลขในบิลให้ไหลต่อเนื่อง */
+    .bill-nums-wrap {
+        font-size:15px; 
+        color:#555; 
+        margin-top:8px; 
+        line-height: 1.6; 
+        word-spacing: 4px;
+        text-align: justify;
+    }
 </style>
 </head>
 
@@ -481,50 +490,22 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-const _canvas=document.createElement("canvas");
-const _ctx=_canvas.getContext("2d");
-_ctx.font="15px 'Sarabun'";
-
-/* แก้ไขใหม่: ให้ตัดคำเมื่อถึงขอบขวาจริงๆ เพื่อให้เลขต่อกันสวยงาม */
-function groupByWidth(nums, w){
-    let lines = [], cur = "", width = 0;
-    nums.forEach(n => {
-        const token = (cur ? " " : "") + n;
-        const tw = _ctx.measureText(token).width;
-        if (width + tw > w) {
-            lines.push(cur);
-            cur = n;
-            width = _ctx.measureText(n).width;
-        } else {
-            cur += (cur ? " " : "") + n;
-            width += tw;
-        }
-    });
-    if (cur) lines.push(cur);
-    return lines;
-}
-
+/* ลบฟังก์ชันเก่าออก และใช้ระบบ Render แบบใหม่ที่ไหลต่อเนื่อง */
 function renderBills(){
     let html="",total=0;
-    let box=document.getElementById("billList");
-    /* ปรับความกว้างให้เต็มที่ */
-    let w=Math.max((box.clientWidth||0)-30, 200);
-    
     bills.forEach((b,i)=>{
         total+=b.total;
         let title = (b.mode === "3d") ? "เลข 3 ตัว" : "เลข 2 ตัว";
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
-        /* แก้ไขตรงนี้: ให้ใช้พื้นที่ความกว้างเต็มๆ */
-        let lines=groupByWidth(b.nums, w).map(l=>`<div>${l}</div>`).join("");
-        
+        /* บังคับให้เลขไหลต่อกันด้วย CSS class .bill-nums-wrap */
         html+=`<div class="bill">
             <div style="width: 100%;">
                 <div class="bill-title">${title}</div>
                 <div class="bill-price">${label}</div>
                 <div class="bill-price">${priceLine}</div>
-                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 0.5px; line-height: 1.4; word-break: break-all;">${lines}</div>
+                <div class="bill-nums-wrap">${b.nums.join(" ")}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
