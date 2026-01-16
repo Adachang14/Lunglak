@@ -322,12 +322,12 @@ inputRun.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ==================== รูด 19 (แก้ไข: รองรับเลขซ้ำและยอดเงินตรง) ==================== */
+/* ==================== รูด 19 (แก้ไข: รองรับเลขซ้ำ) ==================== */
 function generate19(d){
     let out=[];
     for(let i=0;i<=9;i++) out.push(pad2(i+d));
     for(let i=0;i<=9;i++) out.push(pad2(d+i));
-    return [...new Set(out)]; // กันเบิ้ลในตัวมันเอง (เช่น 11) แต่ยอมให้ซ้ำกับการกดครั้งอื่น
+    return [...new Set(out)]; // กันเบิ้ลในตัวมันเอง
 }
 
 inputRood.addEventListener("input",(e)=>{
@@ -341,7 +341,7 @@ inputRood.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ==================== กลับเลข (แก้ไข: ไม่ตัดเลขซ้ำ เมคคานิคเดิมอยู่ครบ) ==================== */
+/* ==================== กลับเลข (แก้ไข: ไม่ตัดเลขซ้ำ) ==================== */
 function reverseNumbers(){
     if(mode==="run"||mode==="19"||mode==="win") return;
     let add=[];
@@ -349,7 +349,7 @@ function reverseNumbers(){
         let n=o.val;
         if(n.length===2){
             if(n[0]!==n[1]){
-                add.push({val:n[1]+n[0]}); 
+                add.push({val:n[1]+n[0]}); // เพิ่มทันที
             }
         }
         if(n.length===3){
@@ -357,7 +357,7 @@ function reverseNumbers(){
             let arr=[a+b+c, a+c+b, b+a+c, b+c+a, c+a+b, c+b+a];
             let uniquePermutations = [...new Set(arr)];
             uniquePermutations.forEach(r=>{
-                if(r !== n) add.push({val:r});
+                if(r !== n) add.push({val:r}); // เพิ่มทันที
             });
         }
     });
@@ -513,8 +513,12 @@ document.addEventListener("keydown",(e)=>{
         else if(el===topPrice){ if(mode==="3d") {todPrice.focus(); todPrice.select();} else {bottomPrice.focus(); bottomPrice.select();} }
         else if(el===bottomPrice || el===todPrice){ addBillAndReset(); }
     }
-    if(e.code==="Space" && (mode==="2d"||mode==="3d")){
-        if(document.activeElement.tagName!=="INPUT") { e.preventDefault(); reverseNumbers(); }
+    // แก้ไข: เอาเงื่อนไขกัน Input ออกแล้ว กด Space ได้ทุกที่
+    if(e.code==="Space"){
+        if(mode==="2d" || mode==="3d"){
+            e.preventDefault(); 
+            reverseNumbers();
+        }
     }
 });
 </script>
