@@ -212,6 +212,7 @@ let bills = [];
 let currentNums = [];
 let winSelected = [];
 let mode = "2d";
+let winTypeSaved = "2"; // เก็บประเภทวิน 2 หรือ 3 ตัวไว้
 let buffer = "";
 let lastDigits = "";
 let isPaste = false;
@@ -242,8 +243,19 @@ function baseSwitchMode(m){
     document.getElementById("zoneRun").style.display = m==="run"?"block":"none";
     document.getElementById("zoneWin").style.display = "none";
 
-    todPrice.style.display = m==="3d" ? "block" : "none";
-    bottomPrice.style.display = m==="3d" ? "none" : "block";
+    // จัดการการแสดงผลช่องราคา
+    if(m==="3d"){
+        todPrice.style.display = "block";
+        bottomPrice.style.display = "none";
+    } else if(m==="win"){
+        // ในโหมดวิน ให้เปลี่ยนตามตัวเลือกวิทยุ
+        let winModeValue = document.querySelector("input[name='winMode']:checked").value;
+        todPrice.style.display = (winModeValue === "3") ? "block" : "none";
+        bottomPrice.style.display = (winModeValue === "3") ? "none" : "block";
+    } else {
+        todPrice.style.display = "none";
+        bottomPrice.style.display = "block";
+    }
 
     inputMain.value=""; inputRun.value=""; inputRood.value="";
     topPrice.value=""; bottomPrice.value=""; todPrice.value="";
@@ -261,6 +273,17 @@ function switchMode(m){
         initWinButtons();
     }
 }
+
+// อัปเดตช่องราคาเมื่อเปลี่ยนประเภทวิน 2 <-> 3
+document.querySelectorAll("input[name='winMode']").forEach(radio => {
+    radio.addEventListener('change', () => {
+        if(mode === "win"){
+            let val = radio.value;
+            todPrice.style.display = (val === "3") ? "block" : "none";
+            bottomPrice.style.display = (val === "3") ? "none" : "block";
+        }
+    });
+});
 
 function renderNumbers(){
     numbersContainer.innerHTML="";
@@ -390,6 +413,7 @@ function initWinButtons(){
 function winCalculate(){
     if(winSelected.length < 2){ alert("เลือกเลขอย่างน้อย 2 ตัว"); return; }
     let type=document.querySelector("input[name='winMode']:checked").value;
+    winTypeSaved = type; // บันทึกไว้ใช้ตอนสร้างบิล
     let dup=document.querySelector("input[name='winDup']:checked").value==="yes";
     let out=[];
     if(type==="2"){
@@ -444,9 +468,17 @@ function addBill(){
     if(list.length===0) return false;
     let t=Number(topPrice.value||0), b=Number(bottomPrice.value||0), td=Number(todPrice.value||0);
     let total=0;
-    if(mode==="3d") { b=0; total=list.length*(t+td); }
+    
+    // กำหนดประเภทบิลให้ชัดเจน
+    let finalMode = mode;
+    if(mode === "win") {
+        finalMode = (winTypeSaved === "3") ? "3d" : "2d";
+    }
+
+    if(finalMode==="3d") { b=0; total=list.length*(t+td); }
     else { total=list.length*(t+b); }
-    bills.push({nums:list, top:t, bottom:b, tod:td, total:total, mode:mode});
+    
+    bills.push({nums:list, top:t, bottom:b, tod:td, total:total, mode:finalMode});
     renderBills();
     return true;
 }
@@ -481,16 +513,17 @@ function renderBills(){
     let html="",total=0;
     let box=document.getElementById("billList");
     let w=Math.max((box.clientWidth||0)-40,100);
+    
     bills.forEach((b,i)=>{
         total+=b.total;
-        let title= b.mode==="2d"?"เลข 2 ตัว": b.mode==="3d"?"เลข 3 ตัว": b.mode==="run"?"เลขวิ่ง": b.mode==="19"?"เลขรูด":"เลขวิน";
         
+        // แยกหัวข้อให้ตรงเป๊ะตามสั่ง
+        let title = (b.mode === "3d") ? "เลข 3 ตัว" : "เลข 2 ตัว";
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
         let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.85).map(l=>`<div>${l}</div>`).join("");
         
-        // เรียงแบบ 3 บรรทัดตามที่คุณต้องการ
         html+=`<div class="bill">
             <div style="width: 100%;">
                 <div class="bill-title">${title}</div>
@@ -520,7 +553,11 @@ document.addEventListener("keydown",(e)=>{
         e.preventDefault();
         let el=document.activeElement;
         if(el===inputMain||el===inputRun||el===inputRood){ topPrice.focus(); topPrice.select(); }
-        else if(el===topPrice){ if(mode==="3d") {todPrice.focus(); todPrice.select();} else {bottomPrice.focus(); bottomPrice.select();} }
+        else if(el===topPrice){ 
+            // เช็คว่าต้องไปช่องล่าง หรือ ช่องโต๊ด
+            if(todPrice.style.display !== "none") {todPrice.focus(); todPrice.select();} 
+            else {bottomPrice.focus(); bottomPrice.select();} 
+        }
         else if(el===bottomPrice || el===todPrice){ addBillAndReset(); }
     }
     if(e.code==="Space"){
