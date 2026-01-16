@@ -137,14 +137,20 @@
         color:white;
         border-color:#ff9800;
     }
-    /* สไตล์สำหรับกล่องเลขในบิลให้ไหลต่อเนื่อง */
-    .bill-nums-wrap {
-        font-size:15px; 
-        color:#555; 
-        margin-top:8px; 
-        line-height: 1.6; 
-        word-spacing: 4px;
-        text-align: justify;
+
+    /* ปรับแต่งส่วนแสดงเลขในบิลให้ชิดกัน */
+    .bill-nums-container {
+        font-size: 15px;
+        color: #555;
+        margin-top: 8px;
+        line-height: 1.5;
+        word-break: break-all;
+        text-align: left;
+    }
+    
+    .bill-num-item {
+        display: inline-block;
+        margin-right: 8px; /* ระยะห่างระหว่างตัวเลข */
     }
 </style>
 </head>
@@ -168,7 +174,7 @@
 </div>
 
 <div id="zoneRood" style="display:none;">
-    <div class="label">รูด: ใส่เลข (ห้ามวาง)</div>
+    <div class="label">รูด: ใส่เลข(ห้ามวาง)</div>
     <input id="inputRood" type="text">
 </div>
 
@@ -490,7 +496,6 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ลบฟังก์ชันเก่าออก และใช้ระบบ Render แบบใหม่ที่ไหลต่อเนื่อง */
 function renderBills(){
     let html="",total=0;
     bills.forEach((b,i)=>{
@@ -499,13 +504,15 @@ function renderBills(){
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
-        /* บังคับให้เลขไหลต่อกันด้วย CSS class .bill-nums-wrap */
+        // สร้างรายการเลขให้ชิดกัน
+        let numsHtml = b.nums.map(n => `<span class="bill-num-item">${n}</span>`).join("");
+        
         html+=`<div class="bill">
             <div style="width: 100%;">
                 <div class="bill-title">${title}</div>
                 <div class="bill-price">${label}</div>
                 <div class="bill-price">${priceLine}</div>
-                <div class="bill-nums-wrap">${b.nums.join(" ")}</div>
+                <div class="bill-nums-container">${numsHtml}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
