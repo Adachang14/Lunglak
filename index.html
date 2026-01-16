@@ -138,7 +138,6 @@
         border-color:#ff9800;
     }
 
-    /* ปรับแต่งส่วนแสดงเลขในบิลให้ชิดกัน */
     .bill-nums-container {
         font-size: 15px;
         color: #555;
@@ -150,7 +149,7 @@
     
     .bill-num-item {
         display: inline-block;
-        margin-right: 8px; /* ระยะห่างระหว่างตัวเลข */
+        margin-right: 8px;
     }
 </style>
 </head>
@@ -174,7 +173,7 @@
 </div>
 
 <div id="zoneRood" style="display:none;">
-    <div class="label">รูด: ใส่เลข(ห้ามวาง)</div>
+    <div class="label">รูด: ใส่เลข (ห้ามวาง)</div>
     <input id="inputRood" type="text">
 </div>
 
@@ -468,19 +467,44 @@ function winClear(){
     currentNums=[]; renderNumbers();
 }
 
+/* ==================== แก้ไขใหม่: ฟังก์ชันเพิ่มบิล พร้อมระบบแจ้งเตือนใส่ราคา ==================== */
 function addBill(){
     let list=currentNums.map(x=>x.val);
     if(list.length===0) return false;
-    let t=Number(topPrice.value||0), b=Number(bottomPrice.value||0), td=Number(todPrice.value||0);
-    let total=0;
     
+    let t=Number(topPrice.value||0);
+    let b=Number(bottomPrice.value||0);
+    let td=Number(todPrice.value||0);
+    
+    // ดึงประเภทบิล
     let finalMode = mode;
     if(mode === "win") {
         finalMode = (winTypeSaved === "3") ? "3d" : "2d";
     }
 
-    if(finalMode==="3d") { b=0; total=list.length*(t+td); }
-    else { total=list.length*(t+b); }
+    // --- ตรวจสอบราคาตามโหมด ---
+    if (finalMode === "3d") {
+        // โหมด 3 ตัว ต้องใส่ราคาบน หรือ โต๊ด
+        if (t === 0 && td === 0) {
+            alert("กรุณาใส่ราคาก่อนที่จะเพิ่มบิล");
+            topPrice.focus();
+            return false;
+        }
+    } else {
+        // โหมด 2 ตัว/รูด/วิ่ง ต้องใส่ราคาบน หรือ ล่าง
+        if (t === 0 && b === 0) {
+            alert("กรุณาใส่ราคาก่อนที่จะเพิ่มบิล");
+            topPrice.focus();
+            return false;
+        }
+    }
+
+    let total=0;
+    if(finalMode==="3d") { 
+        total=list.length*(t+td); 
+    } else { 
+        total=list.length*(t+b); 
+    }
     
     bills.push({nums:list, top:t, bottom:b, tod:td, total:total, mode:finalMode});
     renderBills();
@@ -504,7 +528,6 @@ function renderBills(){
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
-        // สร้างรายการเลขให้ชิดกัน
         let numsHtml = b.nums.map(n => `<span class="bill-num-item">${n}</span>`).join("");
         
         html+=`<div class="bill">
