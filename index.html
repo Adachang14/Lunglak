@@ -322,12 +322,12 @@ inputRun.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ==================== รูด 19 (แก้ไข: รองรับเลขซ้ำ) ==================== */
+/* ==================== รูด 19 ==================== */
 function generate19(d){
     let out=[];
     for(let i=0;i<=9;i++) out.push(pad2(i+d));
     for(let i=0;i<=9;i++) out.push(pad2(d+i));
-    return [...new Set(out)]; // กันเบิ้ลในตัวมันเอง
+    return [...new Set(out)]; 
 }
 
 inputRood.addEventListener("input",(e)=>{
@@ -336,12 +336,12 @@ inputRood.addEventListener("input",(e)=>{
     inputRood.value="";
     if(!d) return;
     generate19(d).forEach(n=>{
-        currentNums.push({val:n}); // เพิ่มทันที ไม่เช็คซ้ำข้ามชุด
+        currentNums.push({val:n}); 
     });
     renderNumbers();
 });
 
-/* ==================== กลับเลข (แก้ไข: ไม่ตัดเลขซ้ำ) ==================== */
+/* ==================== กลับเลข ==================== */
 function reverseNumbers(){
     if(mode==="run"||mode==="19"||mode==="win") return;
     let add=[];
@@ -349,7 +349,7 @@ function reverseNumbers(){
         let n=o.val;
         if(n.length===2){
             if(n[0]!==n[1]){
-                add.push({val:n[1]+n[0]}); // เพิ่มทันที
+                add.push({val:n[1]+n[0]}); 
             }
         }
         if(n.length===3){
@@ -357,7 +357,7 @@ function reverseNumbers(){
             let arr=[a+b+c, a+c+b, b+a+c, b+c+a, c+a+b, c+b+a];
             let uniquePermutations = [...new Set(arr)];
             uniquePermutations.forEach(r=>{
-                if(r !== n) add.push({val:r}); // เพิ่มทันที
+                if(r !== n) add.push({val:r}); 
             });
         }
     });
@@ -461,7 +461,7 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ==================== Render Bills ==================== */
+/* ==================== Render Bills (Clean Version) ==================== */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun'";
@@ -487,11 +487,12 @@ function renderBills(){
         let title= b.mode==="2d"?"เลข 2 ตัว": b.mode==="3d"?"เลข 3 ตัว": b.mode==="run"?"เลขวิ่ง": b.mode==="19"?"เลขรูด":"เลขวิน";
         let priceLine=(b.mode==="3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.7).map(l=>`<div>${l}</div>`).join("");
+        
         html+=`<div class="bill">
             <div>
-                <div class="bill-title">${title} (${b.nums.length} ตัว)</div>
-                <div class="bill-price">ราคา: ${priceLine} | รวม: ${b.total}.-</div>
-                <div style="font-size:14px; color:#555;">${lines}</div>
+                <div class="bill-title">${title}</div>
+                <div class="bill-price">ราคา: ${priceLine}</div>
+                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 1px;">${lines}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
@@ -513,7 +514,6 @@ document.addEventListener("keydown",(e)=>{
         else if(el===topPrice){ if(mode==="3d") {todPrice.focus(); todPrice.select();} else {bottomPrice.focus(); bottomPrice.select();} }
         else if(el===bottomPrice || el===todPrice){ addBillAndReset(); }
     }
-    // แก้ไข: เอาเงื่อนไขกัน Input ออกแล้ว กด Space ได้ทุกที่
     if(e.code==="Space"){
         if(mode==="2d" || mode==="3d"){
             e.preventDefault(); 
