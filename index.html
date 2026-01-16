@@ -112,7 +112,7 @@
     }
 
     .bill-title { font-weight:bold; margin-bottom:2px; font-size:16px; }
-    .bill-price { font-weight:bold; color:#333; margin-bottom:5px; font-size:15px; }
+    .bill-price { font-weight:bold; color:#333; margin-bottom:2px; font-size:15px; }
     .del-btn { font-size:22px; color:red; cursor:pointer; user-select:none; align-self: flex-start; }
     .total-all { text-align:center; font-size:22px; margin-top:20px; font-weight:bold; }
 
@@ -154,12 +154,12 @@
 </div>
 
 <div id="zoneMain">
-    <div class="label">ช่อง 1 (ใส่เลข)</div>
+    <div class="label">ช่อง 1 ใส่เลข</div>
     <input id="inputMain" type="text">
 </div>
 
 <div id="zoneRood" style="display:none;">
-    <div class="label">รูด: ใส่เลข(ห้ามวาง)</div>
+    <div class="label">รูด: ใส่เลข (ห้ามวาง)</div>
     <input id="inputRood" type="text">
 </div>
 
@@ -186,7 +186,7 @@
     </div>
 </div>
 
-<div class="label" style="margin-top:15px;">ช่อง 2:ผลลัพ</div>
+<div class="label" style="margin-top:15px;">ช่อง 2: ผลลัพธ์</div>
 <div id="numbersContainer" class="numbers-container"></div>
 
 <div class="row" style="margin-top:15px;">
@@ -212,7 +212,7 @@ let bills = [];
 let currentNums = [];
 let winSelected = [];
 let mode = "2d";
-let winTypeSaved = "2"; // เก็บประเภทวิน 2 หรือ 3 ตัวไว้
+let winTypeSaved = "2";
 let buffer = "";
 let lastDigits = "";
 let isPaste = false;
@@ -228,7 +228,6 @@ const todPrice = document.getElementById("tod");
 const pad2 = n => n.toString().padStart(2,"0");
 const pad3 = n => n.toString().padStart(3,"0");
 
-/* ==================== เปลี่ยนโหมด ==================== */
 function baseSwitchMode(m){
     mode = m;
     document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
@@ -243,12 +242,10 @@ function baseSwitchMode(m){
     document.getElementById("zoneRun").style.display = m==="run"?"block":"none";
     document.getElementById("zoneWin").style.display = "none";
 
-    // จัดการการแสดงผลช่องราคา
     if(m==="3d"){
         todPrice.style.display = "block";
         bottomPrice.style.display = "none";
     } else if(m==="win"){
-        // ในโหมดวิน ให้เปลี่ยนตามตัวเลือกวิทยุ
         let winModeValue = document.querySelector("input[name='winMode']:checked").value;
         todPrice.style.display = (winModeValue === "3") ? "block" : "none";
         bottomPrice.style.display = (winModeValue === "3") ? "none" : "block";
@@ -274,7 +271,6 @@ function switchMode(m){
     }
 }
 
-// อัปเดตช่องราคาเมื่อเปลี่ยนประเภทวิน 2 <-> 3
 document.querySelectorAll("input[name='winMode']").forEach(radio => {
     radio.addEventListener('change', () => {
         if(mode === "win"){
@@ -296,7 +292,6 @@ function renderNumbers(){
     });
 }
 
-/* ==================== Input 2/3 ตัว ==================== */
 inputMain.addEventListener("paste",()=> isPaste=true);
 inputMain.addEventListener("input",(e)=>{
     if(mode!=="2d" && mode!=="3d") return;
@@ -334,7 +329,6 @@ function handlePaste(text){
     renderNumbers();
 }
 
-/* ==================== วิ่ง ==================== */
 inputRun.addEventListener("input",(e)=>{
     if(mode!=="run") return;
     let d=e.target.value.replace(/\D/g,"");
@@ -344,7 +338,6 @@ inputRun.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ==================== รูด 19 ==================== */
 function generate19(d){
     let out=[];
     for(let i=0;i<=9;i++) out.push(pad2(i+d));
@@ -363,7 +356,6 @@ inputRood.addEventListener("input",(e)=>{
     renderNumbers();
 });
 
-/* ==================== กลับเลข ==================== */
 function reverseNumbers(){
     if(mode==="run"||mode==="19"||mode==="win") return;
     let add=[];
@@ -387,7 +379,6 @@ function reverseNumbers(){
     renderNumbers();
 }
 
-/* ==================== วินเลข ==================== */
 function initWinButtons(){
     winSelected=[];
     const zone=document.getElementById("winDigits");
@@ -413,7 +404,7 @@ function initWinButtons(){
 function winCalculate(){
     if(winSelected.length < 2){ alert("เลือกเลขอย่างน้อย 2 ตัว"); return; }
     let type=document.querySelector("input[name='winMode']:checked").value;
-    winTypeSaved = type; // บันทึกไว้ใช้ตอนสร้างบิล
+    winTypeSaved = type;
     let dup=document.querySelector("input[name='winDup']:checked").value==="yes";
     let out=[];
     if(type==="2"){
@@ -462,14 +453,12 @@ function winClear(){
     currentNums=[]; renderNumbers();
 }
 
-/* ==================== เพิ่มบิล ==================== */
 function addBill(){
     let list=currentNums.map(x=>x.val);
     if(list.length===0) return false;
     let t=Number(topPrice.value||0), b=Number(bottomPrice.value||0), td=Number(todPrice.value||0);
     let total=0;
     
-    // กำหนดประเภทบิลให้ชัดเจน
     let finalMode = mode;
     if(mode === "win") {
         finalMode = (winTypeSaved === "3") ? "3d" : "2d";
@@ -492,44 +481,50 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ==================== Render Bills (Clean & 3-Line Layout) ==================== */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun'";
 
-function groupByWidth(nums,w){
-    let lines=[],cur="",width=0;
-    nums.forEach(n=>{
-        const token=(cur?" ":"")+n;
-        const tw=_ctx.measureText(token).width;
-        if(width+tw>w){ lines.push(cur); cur=n; width=_ctx.measureText(n).width; }
-        else { cur+=(cur?" ":"")+n; width+=tw; }
+/* แก้ไขใหม่: ให้ตัดคำเมื่อถึงขอบขวาจริงๆ เพื่อให้เลขต่อกันสวยงาม */
+function groupByWidth(nums, w){
+    let lines = [], cur = "", width = 0;
+    nums.forEach(n => {
+        const token = (cur ? " " : "") + n;
+        const tw = _ctx.measureText(token).width;
+        if (width + tw > w) {
+            lines.push(cur);
+            cur = n;
+            width = _ctx.measureText(n).width;
+        } else {
+            cur += (cur ? " " : "") + n;
+            width += tw;
+        }
     });
-    if(cur) lines.push(cur);
+    if (cur) lines.push(cur);
     return lines;
 }
 
 function renderBills(){
     let html="",total=0;
     let box=document.getElementById("billList");
-    let w=Math.max((box.clientWidth||0)-40,100);
+    /* ปรับความกว้างให้เต็มที่ */
+    let w=Math.max((box.clientWidth||0)-30, 200);
     
     bills.forEach((b,i)=>{
         total+=b.total;
-        
-        // แยกหัวข้อให้ตรงเป๊ะตามสั่ง
         let title = (b.mode === "3d") ? "เลข 3 ตัว" : "เลข 2 ตัว";
         let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
         let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
         
-        let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.85).map(l=>`<div>${l}</div>`).join("");
+        /* แก้ไขตรงนี้: ให้ใช้พื้นที่ความกว้างเต็มๆ */
+        let lines=groupByWidth(b.nums, w).map(l=>`<div>${l}</div>`).join("");
         
         html+=`<div class="bill">
             <div style="width: 100%;">
                 <div class="bill-title">${title}</div>
                 <div class="bill-price">${label}</div>
                 <div class="bill-price">${priceLine}</div>
-                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 1px; line-height: 1.4;">${lines}</div>
+                <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 0.5px; line-height: 1.4; word-break: break-all;">${lines}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
         </div>`;
@@ -547,14 +542,12 @@ function clearNumbersOnly(){
     renderBills(); 
 }
 
-/* ==================== Keyboard shortcuts ==================== */
 document.addEventListener("keydown",(e)=>{
     if(e.key==="Tab"){
         e.preventDefault();
         let el=document.activeElement;
         if(el===inputMain||el===inputRun||el===inputRood){ topPrice.focus(); topPrice.select(); }
         else if(el===topPrice){ 
-            // เช็คว่าต้องไปช่องล่าง หรือ ช่องโต๊ด
             if(todPrice.style.display !== "none") {todPrice.focus(); todPrice.select();} 
             else {bottomPrice.focus(); bottomPrice.select();} 
         }
