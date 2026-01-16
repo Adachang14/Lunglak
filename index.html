@@ -461,7 +461,7 @@ function addBillAndReset(){
     if(mode==="19") inputRood.focus();
 }
 
-/* ==================== Render Bills ==================== */
+/* ==================== Render Bills (Clean & Custom Labels) ==================== */
 const _canvas=document.createElement("canvas");
 const _ctx=_canvas.getContext("2d");
 _ctx.font="15px 'Sarabun'";
@@ -485,13 +485,17 @@ function renderBills(){
     bills.forEach((b,i)=>{
         total+=b.total;
         let title= b.mode==="2d"?"เลข 2 ตัว": b.mode==="3d"?"เลข 3 ตัว": b.mode==="run"?"เลขวิ่ง": b.mode==="19"?"เลขรูด":"เลขวิน";
-        let priceLine=(b.mode==="3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
+        
+        // แก้ไขส่วน Label ราคาตามประเภท
+        let label = (b.mode === "3d") ? "บน x โต๊ด" : "บน x ล่าง";
+        let priceLine = (b.mode === "3d") ? `${b.top} x ${b.tod}` : `${b.top} x ${b.bottom}`;
+        
         let lines=groupByWidth(b.nums, b.mode==="3d"?w:w*0.7).map(l=>`<div>${l}</div>`).join("");
         
         html+=`<div class="bill">
             <div>
                 <div class="bill-title">${title}</div>
-                <div class="bill-price">ราคา: ${priceLine}</div>
+                <div class="bill-price">${label}: ${priceLine}</div>
                 <div style="font-size:14px; color:#555; margin-top:5px; letter-spacing: 1px;">${lines}</div>
             </div>
             <div class="del-btn" onclick="delBill(${i})">🗑</div>
@@ -503,7 +507,6 @@ function renderBills(){
 
 function delBill(i){ bills.splice(i,1); renderBills(); }
 
-/* แก้ไขใหม่: ฟังก์ชันล้างเลข ให้ล้างทั้งเลขปัจจุบันและบิลทั้งหมด */
 function clearNumbersOnly(){ 
     currentNums=[]; 
     bills=[]; 
